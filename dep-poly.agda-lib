@@ -1,0 +1,5 @@
+name: dep-poly
+include: .
+depend: cubical
+flags: --cubical --guardedness
+
