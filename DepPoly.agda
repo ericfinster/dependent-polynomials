@@ -59,14 +59,23 @@ module DepPoly where
         → (⇑ P t) ⇒ (⇑ Q (Tm⇒ t)) 
 
   open _⇒_ public
+
+  infix 10 [_≅_↓_]
   
-  record _≅_ {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f g : P ⇒ Q) : Type where
+  record [_≅_↓_] {𝕊 𝕋 : TyStr} {P Q R : DepPoly 𝕊 𝕋} (f : P ⇒ Q) (g : P ⇒ R) (p : Q ≡ R) : Type where
     coinductive
     field
-      Tm~ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T)
-        → Tm⇒ f t ≡ Tm⇒ g t
-      -- ⇑~ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T)
-      --   → (⇑⇒ f t) ≅ {!(⇑⇒ g t) !} -- (⇑⇒ g t) 
+      tm : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T)
+        → PathP (λ i → Tm (p i) Γ T) (Tm⇒ f t) (Tm⇒ g t)
+      co : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T)
+        → [ ⇑⇒ f t ≅ ⇑⇒ g t ↓ (λ i → ⇑ (p i) (tm t i)) ]
+
+  open [_≅_↓_]
+  
+  to : {𝕊 𝕋 : TyStr} {P Q R : DepPoly 𝕊 𝕋} (f : P ⇒ Q) (g : P ⇒ R) (p : Q ≡ R)
+    → [ f ≅ g ↓ p ] → PathP (λ i → P ⇒ (p i)) f g
+  Tm⇒ (to f g p e i) t = tm e t i
+  ⇑⇒ (to {P = P} {Q} {R} f g p e i) t = to (⇑⇒ f t) (⇑⇒ g t) (λ i → ⇑ (p i) (tm e t i)) (co e t) i
 
   --
   --  Free Monoid on a dependent polynomial 
