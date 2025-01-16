@@ -15,7 +15,7 @@ module DepPoly where
       ⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm Γ T)
         → DepPoly ⌈ Γ ⌉ (𝕋 // T)
 
-  open DepPoly
+  open DepPoly public 
 
   data Subst {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Ctx 𝕊 → Ctx 𝕋 → Type where
     ● : Subst M ϵ ϵ
@@ -33,6 +33,12 @@ module DepPoly where
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) =
     transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
+  tmToSubst : {𝕊 𝕋 : TyStr} {P : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} {A : Ty 𝕋} (t : Tm P Γ A)
+    → Subst P Γ (A ► ϵ)
+  tmToSubst {P = P} {Γ} {A} t =
+    transport (λ i → Subst P (++-unit-left Γ i) (A ► ϵ)) (cns Γ A t ϵ ϵ ●)
+
   infixl 30 _⊚_
   
   _⊚_ : {𝕊 𝕋 𝕍 : TyStr} → DepPoly 𝕊 𝕋 → DepPoly 𝕋 𝕍 → DepPoly 𝕊 𝕍
@@ -49,6 +55,10 @@ module DepPoly where
   Tm (IdPoly 𝕋) = IdTm 𝕋
   ⇑ (IdPoly 𝕋) (idT T) = IdPoly (𝕋 // T)
 
+  idSubst : {𝕋 : TyStr} (Γ : Ctx 𝕋) → Subst (IdPoly 𝕋) Γ Γ
+  idSubst ϵ = ●
+  idSubst (T ► Γ) = cns (T ► ϵ) T (idT T) Γ Γ (idSubst Γ)
+
   infixr 20 _⇒_
   
   record _⇒_ {𝕊 𝕋 : TyStr} (P Q : DepPoly 𝕊 𝕋) : Type where
@@ -59,6 +69,15 @@ module DepPoly where
         → (⇑ P t) ⇒ (⇑ Q (Tm⇒ t)) 
 
   open _⇒_ public
+
+  -- Substitutions are functorial
+  Subst⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+    → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
+    → Subst P Γ Δ
+    → Subst Q Γ Δ
+  Subst⇒ f ● = ● 
+  Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
+    cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
   infix 10 [_≅_↓_]
   
@@ -76,6 +95,11 @@ module DepPoly where
     → [ f ≅ g ↓ p ] → PathP (λ i → P ⇒ (p i)) f g
   Tm⇒ (to f g p e i) t = tm e t i
   ⇑⇒ (to {P = P} {Q} {R} f g p e i) t = to (⇑⇒ f t) (⇑⇒ g t) (λ i → ⇑ (p i) (tm e t i)) (co e t) i
+
+  -- from : {𝕊 𝕋 : TyStr} {P Q R : DepPoly 𝕊 𝕋} (f : P ⇒ Q) (g : P ⇒ R) (p : Q ≡ R)
+  --   → PathP (λ i → P ⇒ (p i)) f g → [ f ≅ g ↓ p ]
+  -- from = {!!} 
+
 
   --
   --  Free Monoid on a dependent polynomial 

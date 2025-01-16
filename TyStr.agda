@@ -37,6 +37,11 @@ module TyStr where
   ++-ceil ϵ Δ = refl
   ++-ceil (T ► Γ) Δ = ++-ceil Γ Δ
 
+  ++-unit-left : {𝕋 : TyStr} (Γ : Ctx 𝕋)
+    → Γ ++ ϵ ≡ Γ
+  ++-unit-left ϵ = refl
+  ++-unit-left (T ► Γ) i = T ► ++-unit-left Γ i
+
   --
   --  The TyStr of Contexts 
   --

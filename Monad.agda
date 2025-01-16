@@ -15,3 +15,31 @@ module Monad where
       μ : P ⊚ P ⇒ P
       η : IdPoly 𝕋 ⇒ P
 
+  open Monad
+
+  assoc-mult-left : {𝕋 : TyStr} (M : Monad 𝕋)
+    → (Γ : Ctx 𝕋) (A : Ty 𝕋) 
+    → (t : Tm ((P M ⊚ P M) ⊚ P M) Γ A)
+    → Tm (P M) Γ A 
+  assoc-mult-left M Γ A (Δ , σ , t) =
+    Tm⇒ (μ M) (Δ , Subst⇒ (μ M) σ , t)
+
+  assoc-mult-right : {𝕋 : TyStr} (M : Monad 𝕋)
+    → (Γ : Ctx 𝕋) (A : Ty 𝕋) 
+    → (t : Tm (P M ⊚ (P M ⊚ P M)) Γ A)
+    → Tm (P M) Γ A 
+  assoc-mult-right M Γ A (Δ , σ , Θ , τ , t) =
+    Tm⇒ (μ M) (Δ , σ , Tm⇒ (μ M) (Θ , τ , t)) 
+
+  unit-mult-left : {𝕋 : TyStr} (M : Monad 𝕋)
+    → (Γ : Ctx 𝕋) (A : Ty 𝕋) (t : Tm (P M) Γ A)
+    → Tm (P M) Γ A
+  unit-mult-left M Γ A t =
+    Tm⇒ (μ M) (Γ , Subst⇒ (η M) (idSubst Γ) , t)
+
+  unit-mult-right : {𝕋 : TyStr} (M : Monad 𝕋)
+    → (Γ : Ctx 𝕋) (A : Ty 𝕋) (t : Tm (P M) Γ A)
+    → Tm (P M) Γ A
+  unit-mult-right M Γ A t = 
+    Tm⇒ (μ M) (A ► ϵ , tmToSubst t , Tm⇒ (η M) (idT A))
+
