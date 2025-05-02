@@ -79,6 +79,25 @@ module DepPoly where
   Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
     cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
+  ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+    → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
+    → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
+  ⌈ f ∣ ● ⌉⇒ = f
+  ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
+
+  -- ⊚ is functorial in each argument
+  ⊚-func-left : {𝕊 𝕋 𝕍 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+    → (R : DepPoly 𝕋 𝕍)
+    → P ⊚ R ⇒ Q ⊚ R
+  Tm⇒ (⊚-func-left f R) (Γ , σ , t) = Γ , Subst⇒ f σ , t
+  ⇑⇒ (⊚-func-left f R) (Γ , σ , t) = ⊚-func-left ⌈ f ∣ σ ⌉⇒ (⇑ R t)
+
+  ⊚-func-right : {𝕊 𝕋 𝕍 : TyStr} (P : DepPoly 𝕊 𝕋) 
+    → {Q R : DepPoly 𝕋 𝕍} (f : Q ⇒ R)
+    → P ⊚ Q ⇒ P ⊚ R
+  Tm⇒ (⊚-func-right P f) (Γ , σ , t) = Γ , σ , Tm⇒ f t
+  ⇑⇒ (⊚-func-right P f) (Γ , σ , t) = ⊚-func-right (⌈ σ ⌉s) (⇑⇒ f t)
+
   infix 10 [_≅_↓_]
   
   record [_≅_↓_] {𝕊 𝕋 : TyStr} {P Q R : DepPoly 𝕊 𝕋} (f : P ⇒ Q) (g : P ⇒ R) (p : Q ≡ R) : Type where
