@@ -111,3 +111,16 @@ module TyStr where
   Ty (𝕋 ⊗ 𝕊) = Ty 𝕋 × Ty 𝕊
   _//_ (𝕋 ⊗ 𝕊) (T , S) = (𝕋 // T) ⊗ (𝕊 // S)
 
+  -- Section
+  record Section (𝕋 : TyStr) : Type where
+    coinductive
+    field
+      s : (T : Ty 𝕋) → Ty (𝕋 // T)
+      ↑s_ : (T : Ty 𝕋) → Section (𝕋 // T) 
+
+  -- Weakening structure
+  record WkStr (𝕋 : TyStr) : Type where
+    coinductive
+    field 
+      wk : (T : Ty 𝕋) → Section 𝕋
+      wk↑ : (T : Ty 𝕋) → WkStr (𝕋 // T) 
