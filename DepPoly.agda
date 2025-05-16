@@ -30,7 +30,7 @@ module DepPoly where
     → Subst M Γ Δ
     → DepPoly ⌈ Γ ⌉ ⌈ Δ ⌉
   ⌈_⌉s {M = M} ● = M
-  ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) =
+  ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = 
     transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
   tmToSubst : {𝕊 𝕋 : TyStr} {P : DepPoly 𝕊 𝕋}
@@ -79,11 +79,17 @@ module DepPoly where
   Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
     cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
-  ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
-    → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
-    → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
-  ⌈ f ∣ ● ⌉⇒ = f
-  ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
+  Id⇒ : {𝕊 𝕋 : TyStr} (P : DepPoly 𝕊 𝕋) → P ⇒ P
+  Id⇒ P .Tm⇒ t = t
+  Id⇒ P .⇑⇒ t = Id⇒ (⇑ P t)
+  
+  postulate
+  
+    ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+      → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
+      → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
+  -- ⌈ f ∣ ● ⌉⇒ = f
+  -- ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
 
   -- ⊚ is functorial in each argument
   ⊚-func-left : {𝕊 𝕋 𝕍 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
