@@ -33,9 +33,10 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
             cextHom2 : {Γ : Ctxt .ob} (σ : TyP Γ) → (TmP (TyPm (cextHom1 σ) σ))
             cextHomM : {Γ Δ : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → {σ : TyP Δ} → (M : TmP (TyPm f σ)) → Ctxt [ Γ , (cextOb Δ σ) ]
             ConsL : {Γ Δ : Ctxt .ob} {σ : TyP Δ} (f : Ctxt [ Γ , Δ ]) → (M : TmP (TyPm f σ)) → f ≡ Ctxt ._⋆_ (cextHomM f M) (cextHom1 σ)
-            ConsR : {Γ Δ : ob Ctxt} → {σ : TyP Δ} → (f : Ctxt [ Γ , Δ ]) → (M : TmP (TyPm f σ))
+            ConsR : {Γ Δ : ob Ctxt} → {σ : TyP Δ} → (f : Ctxt [ Γ , Δ ]) → (M : TmP (TyPm f σ)) 
                 → subst (λ τ → TmP τ) (  TyPmComp σ (cextHomM f M) (cextHom1 σ) ∙ cong (λ h → TyPm h σ) (sym (ConsL f M))) (TmPm (cextHomM f M) (TyPm (cextHom1 σ) σ) (cextHom2 σ)) ≡ M
-
+            ConsNat : {Γ Δ B : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (g : Ctxt [ B , Γ ]) →  {σ : TyP Δ} → (M : TmP (TyPm f σ)) → (Ctxt ._⋆_ g  (cextHomM f M)) ≡ cextHomM (Ctxt ._⋆_ g f) (subst (λ σ' → TmP σ') (TyPmComp σ g f) (TmPm g (TyPm f σ) M))   
+            ConsId : {Γ Δ : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (σ : TyP Δ) → cextHomM (cextHom1 σ) (cextHom2 σ) ≡ Ctxt .id {x = cextOb Δ σ} 
             -- ((TmPm (cextHomM f M) ((TyPm (cextHom1 σ)) σ)) (cextHom2 σ)) ≡ M
 
 
