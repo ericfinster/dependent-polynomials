@@ -9,7 +9,7 @@ open import Cubical.Categories.Functor
 
 open import TCategory -- Categories with a terminal object
 open import TyStr
-open import DepPoly
+-- open import DepPoly
 
 open Category
 open Contravariant
@@ -51,9 +51,9 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
     CwFHToTyStr {T = T} CwF // x = CwFHToTyStr (CwFHslice CwF x)
 
-    CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
-    CwFHToDepPoly CwF .Tm x x₁ = TmP CwF x₁ -- not sure if this is what I want
-    CwFHToDepPoly CwF .⇑ t = {!   !}
+    -- CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
+    -- CwFHToDepPoly CwF .Tm x x₁ = TmP CwF x₁ -- not sure if this is what I want
+    -- CwFHToDepPoly CwF .⇑ t = {!   !}
 
 
 

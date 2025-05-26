@@ -16,9 +16,10 @@ module TypeCatSlice where
 
     -- maybe agda is unable to infer that S-ob is actually ob C? YES THAT IS THE PROBLEM, WE DONT HAVE AN ACTUAL OBJECT!!!!!!
 
-    TypeCatSlice : {ℓ ℓ' ℓ'' : Level} {C : Category ℓ ℓ'} {O : C. ob} (TyC : isTypeCategory {ℓ = ℓ} {ℓ' = ℓ'} {ℓ'' = ℓ''} C) → (Ty : Ty[ TyC ] O) → (TC : TCategory C) → (isTypeCategory {ℓ = (ℓ-max ℓ ℓ')} {ℓ' = ℓ'} {ℓ'' = ℓ''} (SliceCat C (fst (cext TyC O Ty))))
-    Ty[ TypeCatSlice {O = O} TyC Ty TC ] x =  {! (reindex TyC (S-arr x) (reindex TyC (snd (cext TyC O Ty)) Ty))  !} 
-    TypeCatSlice TyC Ty TC .cext Γ A .fst = {! S-arr x  !}
+    TypeCatSlice : {ℓ ℓ' ℓ'' : Level} {C : Category ℓ ℓ'} {O : C. ob} (TyC : isTypeCategory {ℓ = ℓ} {ℓ' = ℓ'} {ℓ'' = ℓ''} C) → (Ty : Ty[ TyC ] O)
+      → (TC : TCategory C) → (isTypeCategory {ℓ = (ℓ-max ℓ ℓ')} {ℓ' = ℓ'} {ℓ'' = ℓ''} (SliceCat C (fst (cext TyC O Ty))))
+    Ty[ TypeCatSlice {O = O} TyC Ty TC ] (sliceob {S-ob} S-arr) = Ty[ TyC ] S-ob
+    TypeCatSlice TyC Ty TC .cext (sliceob {S-ob} S-arr) A .fst = let (ΓA , πA) = TyC .cext S-ob A in sliceob {S-ob = ΓA} (_⋆_ _ πA S-arr)
     TypeCatSlice TyC Ty TC .cext Γ A .snd = {!   !}
     TypeCatSlice TyC Ty TC .reindex x x₁ = {!   !}
     TypeCatSlice TyC Ty TC .q⟨_,_⟩ = {!   !}

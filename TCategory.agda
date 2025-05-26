@@ -21,10 +21,11 @@ record TCategory {ℓ ℓ' : Level} (C : Category ℓ ℓ') : Type (ℓ-suc (ℓ
 open TCategory
 open Cubical.Categories.Constructions.Slice
 open SliceOb
-{-
-TCat-Slice : {ℓ ℓ' : Level} {C : Category ℓ ℓ'} (c : Category.ob C) → (T : TCategory C) → (TCategory (SliceCat C c))
-TCat-Slice {ℓ} {ℓ'} {C = C} c T .TerObj = {! sliceob {ℓ = ℓ} {ℓ' = ℓ'} {C = C} {c = c} C .id !}
-TCat-Slice c T .TermPr = {!   !}
-TCat-Slice c T .TermPrUn = {!   !}
--}
--- (TCategory {ℓ = (ℓ-max ℓ ℓ')} {ℓ' = ℓ'} (SliceCat C c))
+
+
+
+-- TCat-Slice : {ℓ ℓ' : Level} {C : Category ℓ ℓ'} (c : Category.ob C) → (T : TCategory C) → (TCategory (SliceCat C c))
+-- TCat-Slice {ℓ} {ℓ'} {C = C} c T .TerObj =  sliceob (id T {c})
+-- TCat-Slice c T .TermPr = {!   !}
+-- TCat-Slice c T .TermPrUn = {!   !}
+
