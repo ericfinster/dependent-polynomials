@@ -37,7 +37,23 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
                 → subst (λ τ → TmP τ) (  TyPmComp σ (cextHomM f M) (cextHom1 σ) ∙ cong (λ h → TyPm h σ) (sym (ConsL f M))) (TmPm (cextHomM f M) (TyPm (cextHom1 σ) σ) (cextHom2 σ)) ≡ M
             ConsNat : {Γ Δ B : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (g : Ctxt [ B , Γ ]) →  {σ : TyP Δ} → (M : TmP (TyPm f σ)) → (Ctxt ._⋆_ g  (cextHomM f M)) ≡ cextHomM (Ctxt ._⋆_ g f) (subst (λ σ' → TmP σ') (TyPmComp σ g f) (TmPm g (TyPm f σ) M))   
             ConsId : {Γ Δ : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (σ : TyP Δ) → cextHomM (cextHom1 σ) (cextHom2 σ) ≡ Ctxt .id {x = cextOb Δ σ} 
-            -- ((TmPm (cextHomM f M) ((TyPm (cextHom1 σ)) σ)) (cextHom2 σ)) ≡ M
+
+    open CwFH
+
+    postulate
+        CwFHTerminal : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (TCategory (SliceCat Ctxt Γ))
+
+    postulate
+        CwFHslice : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (CwFH (SliceCat Ctxt Γ) (CwFHTerminal CwF Ty))
+
+
+    CwFHToTyStr : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → TyStr
+    CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
+    CwFHToTyStr {T = T} CwF // x = CwFHToTyStr (CwFHslice CwF x)
+
+    CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
+    CwFHToDepPoly CwF .Tm x x₁ = TmP CwF x₁ -- not sure if this is what I want
+    CwFHToDepPoly CwF .⇑ t = {!   !}
 
 
 
