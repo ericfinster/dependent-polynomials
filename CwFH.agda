@@ -46,7 +46,6 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHTerminal : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (TCategory (SliceCat Ctxt Γ))
     CwFHTerminal {T = T} CwF {Γ} Ty₁ = TCat-Slice Γ T
 
-    
     CwFHslice : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (CwFH (SliceCat Ctxt Γ) (CwFHTerminal CwF Ty))
     CwFHslice CwF Ty₁ .TyP x = CwF .TyP (S-ob x)
     CwFHslice CwF Ty₁ .TmP A = CwF .TmP A
@@ -59,15 +58,14 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHslice {Ctxt = Ctxt} {T} CwF Ty₁ .cextOb Γ σ = sliceob (Ctxt ._⋆_ (CwF .cextHom1 σ) (S-arr Γ))
     CwFHslice CwF Ty₁ .cextHom1 σ = slicehom (CwF .cextHom1 σ) refl
     CwFHslice CwF Ty₁ .cextHom2 {Γ} σ = CwF .cextHom2 σ
-    CwFHslice {ℓ} {ℓ'} {Ctxt = Ctxt} {T} CwF Ty₁ .cextHomM {Γ} {Δ} f {σ} M = let open Category Ctxt hiding (_∘_) public in slicehom (CwF .cextHomM {(S-ob Γ)} {(S-ob Δ)} (S-hom f) M) {! ⟨ (sym (CwF .ConsL (S-hom f) M)) ⟩⋆⟨ (sym (CwF .ConsL (S-hom f) M)) ⟩ !} -- (sym (CwF .ConsL (S-hom f) M))  ⟨_⟩⋆⟨_⟩ cong₂ _⋆_ (sym (CwF .ConsL (S-hom f) M))   c 
+    CwFHslice {ℓ} {ℓ'} {Ctxt = Ctxt} {T} CwF Ty₁ .cextHomM {Γ} {Δ} f {σ} M = 
+        slicehom (cextHomM CwF ((S-hom f)) M) 
+        ((sym (⋆Assoc Ctxt (cextHomM CwF (S-hom f) M) (cextHom1 CwF σ) (S-arr Δ))) ∙ 
+        (⟨_⟩⋆⟨_⟩ Ctxt (sym (CwF .ConsL (S-hom f) M)) (refl {x = S-arr Δ})) ∙ (S-comm f)) 
     CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsL f M = SliceHom-≡-intro' Ctxt Γ (CwF .ConsL (S-hom f) M)
     CwFHslice CwF Ty₁ .ConsR f M = CwF .ConsR (S-hom f) M
     CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsNat f g M = SliceHom-≡-intro' Ctxt Γ (ConsNat CwF (S-hom f) (S-hom g) M)
     CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsId f σ = SliceHom-≡-intro' Ctxt Γ (CwF .ConsId (S-hom f) σ)
-
-    -- CwF .ConsL (S-hom f) M
-    -- We want in cextHomM something like ⟨ (sym (CwF .ConsL (S-hom f) M)) ⟩⋆⟨ (sym (CwF .ConsL (S-hom f) M)) ⟩ ⋆ (S-comm f)
-
 
     CwFHToTyStr : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → TyStr
     CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
