@@ -51,30 +51,31 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     open Category public
 
     CwFHTerminal : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
-            → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (TCategory (SliceCat Ctxt Γ))
-    CwFHTerminal {T = T} CwF {Γ} Ty₁ = TCat-Slice Γ T
+            → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (TCategory (SliceCat Ctxt (cextOb CwF Γ Ty))) 
+    CwFHTerminal {T = T} CwF {Γ = Γ} Ty₁ = TCat-Slice (cextOb CwF Γ Ty₁) T
+
 
     CwFHslice : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
-            → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (CwFH (SliceCat Ctxt Γ) (CwFHTerminal CwF Ty))
-    CwFHslice CwF Ty₁ .TyP x = CwF .TyP (S-ob x)
-    CwFHslice CwF Ty₁ .TmP A = CwF .TmP A
-    CwFHslice CwF Ty₁ .TyPm f x = (CwF .TyPm (S-hom f)) x
-    CwFHslice CwF Ty₁ .TmPm f σ x = (CwF .TmPm (S-hom f) σ) x
-    CwFHslice CwF Ty₁ .TyPmId σ = CwF .TyPmId σ
-    CwFHslice CwF Ty₁ .TyPmComp σ f g = (CwF .TyPmComp σ (S-hom f) (S-hom g))
-    CwFHslice CwF Ty₁ .TmPmId tm = CwF .TmPmId tm
-    CwFHslice CwF Ty₁ .TmPmComp tm f g = (CwF .TmPmComp tm (S-hom f) (S-hom g))
-    CwFHslice {Ctxt = Ctxt} {T} CwF Ty₁ .cextOb Γ σ = sliceob (Ctxt ._⋆_ (CwF .cextHom1 σ) (S-arr Γ))
+            → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (CwFH (SliceCat Ctxt (cextOb CwF Γ Ty)) (CwFHTerminal CwF Ty))
+    CwFHslice CwF Ty₁ .TyP x = TyP CwF (S-ob x)
+    CwFHslice CwF Ty₁ .TmP A = TmP CwF A
+    CwFHslice CwF Ty₁ .TyPm f x = (TyPm CwF (S-hom f)) x
+    CwFHslice CwF Ty₁ .TmPm f σ x = (TmPm CwF (S-hom f) σ) x
+    CwFHslice CwF Ty₁ .TyPmId σ = TyPmId CwF σ
+    CwFHslice CwF Ty₁ .TyPmComp σ f g = TyPmComp CwF σ (S-hom f) (S-hom g)
+    CwFHslice CwF Ty₁ .TmPmId tm = TmPmId CwF tm
+    CwFHslice CwF Ty₁ .TmPmComp tm f g = TmPmComp CwF tm (S-hom f) (S-hom g)
+    CwFHslice {Ctxt = Ctxt} CwF Ty₁ .cextOb Γ σ = sliceob (Ctxt ._⋆_ (CwF .cextHom1 σ) (S-arr Γ))
     CwFHslice CwF Ty₁ .cextHom1 σ = slicehom (CwF .cextHom1 σ) refl
-    CwFHslice CwF Ty₁ .cextHom2 {Γ} σ = CwF .cextHom2 σ
+    CwFHslice CwF Ty₁ .cextHom2 σ = CwF .cextHom2 σ
     CwFHslice {ℓ} {ℓ'} {Ctxt = Ctxt} {T} CwF Ty₁ .cextHomM {Γ} {Δ} f {σ} M = 
         slicehom (cextHomM CwF ((S-hom f)) M) 
         ((sym (⋆Assoc Ctxt (cextHomM CwF (S-hom f) M) (cextHom1 CwF σ) (S-arr Δ))) ∙ 
-        (⟨_⟩⋆⟨_⟩ Ctxt (sym (CwF .ConsL (S-hom f) M)) (refl {x = S-arr Δ})) ∙ (S-comm f)) 
-    CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsL f M = SliceHom-≡-intro' Ctxt Γ (CwF .ConsL (S-hom f) M)
-    CwFHslice CwF Ty₁ .ConsR f M = CwF .ConsR (S-hom f) M
-    CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsNat f g M = SliceHom-≡-intro' Ctxt Γ (ConsNat CwF (S-hom f) (S-hom g) M)
-    CwFHslice {Ctxt = Ctxt} CwF {Γ} Ty₁ .ConsId f σ = SliceHom-≡-intro' Ctxt Γ (CwF .ConsId (S-hom f) σ)
+        (⟨_⟩⋆⟨_⟩ Ctxt (sym (CwF .ConsL (S-hom f) M)) (refl {x = S-arr Δ})) ∙ (S-comm f))
+    CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsL f M = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) (ConsL CwF ((S-hom f)) M)
+    CwFHslice CwF Ty₁ .ConsR f M = ConsR CwF ((S-hom f)) M
+    CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsNat f g M = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) ((ConsNat CwF (S-hom f) (S-hom g) M))
+    CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsId f σ = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) (ConsId CwF (S-hom f) σ)
 
     CwFHToTyStr : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → TyStr
     CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
@@ -87,11 +88,11 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     ContextToType {T = Ter} CwF (T ► Γ) = S-ob (ContextToType (CwFHslice CwF T) Γ)
 
     CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
-             → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
+                 → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
     CwFHToDepPoly {T = T} CwF .Tm Γ Ty = TmP CwF Ty 
         -- TmP of TyP is actually correct here, Ty is in the empty context and whatver we substitute in there, the terms stay the same
-    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .Tm = {!   !}
-    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .⇑ = {!   !}
+    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .Tm x x₁ = {!  cextHomM CwF  !}
+    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .⇑ t₁ = {!   !}
 
     -- I'm thinking there could be a way to build up substitutions like one builds up contexts, so we start on the term level with the 
     -- empty substitution. And then like we build up the domain context, we build up substitutions into it
