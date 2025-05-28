@@ -36,8 +36,10 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
             cextHomM : {Γ Δ : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → {σ : TyP Δ} → (M : TmP (TyPm f σ)) → Ctxt [ Γ , (cextOb Δ σ) ]
             ConsL : {Γ Δ : Ctxt .ob} {σ : TyP Δ} (f : Ctxt [ Γ , Δ ]) → (M : TmP (TyPm f σ)) → f ≡ Ctxt ._⋆_ (cextHomM f M) (cextHom1 σ)
             ConsR : {Γ Δ : ob Ctxt} → {σ : TyP Δ} → (f : Ctxt [ Γ , Δ ]) → (M : TmP (TyPm f σ)) 
-                    → subst (λ τ → TmP τ) (  TyPmComp σ (cextHomM f M) (cextHom1 σ) ∙ cong (λ h → TyPm h σ) (sym (ConsL f M))) (TmPm (cextHomM f M) (TyPm (cextHom1 σ) σ) (cextHom2 σ)) ≡ M
-            ConsNat : {Γ Δ B : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (g : Ctxt [ B , Γ ]) →  {σ : TyP Δ} → (M : TmP (TyPm f σ)) → (Ctxt ._⋆_ g  (cextHomM f M)) ≡ cextHomM (Ctxt ._⋆_ g f) (subst (λ σ' → TmP σ') (TyPmComp σ g f) (TmPm g (TyPm f σ) M))   
+                    → subst (λ τ → TmP τ) (  TyPmComp σ (cextHomM f M) (cextHom1 σ) 
+                    ∙ cong (λ h → TyPm h σ) (sym (ConsL f M))) (TmPm (cextHomM f M) (TyPm (cextHom1 σ) σ) (cextHom2 σ)) ≡ M
+            ConsNat : {Γ Δ B : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (g : Ctxt [ B , Γ ]) →  {σ : TyP Δ} → (M : TmP (TyPm f σ)) 
+                → (Ctxt ._⋆_ g  (cextHomM f M)) ≡ cextHomM (Ctxt ._⋆_ g f) (subst (λ σ' → TmP σ') (TyPmComp σ g f) (TmPm g (TyPm f σ) M))   
             ConsId : {Γ Δ : Ctxt .ob} (f : Ctxt [ Γ , Δ ]) → (σ : TyP Δ) → cextHomM (cextHom1 σ) (cextHom2 σ) ≡ Ctxt .id {x = cextOb Δ σ} 
 
     open CwFH
@@ -71,8 +73,14 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
     CwFHToTyStr {T = T} CwF // x = CwFHToTyStr (CwFHslice CwF x)
 
+    ContextToType : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
+            → (Γ : (Ctx(CwFHToTyStr CwF))) → (Ctxt .ob)
+    ContextToType {T = Ter} CwF ϵ = TCategory.TerObj Ter
+    ContextToType {T = Ter} CwF (T ► Γ) = S-ob (ContextToType (CwFHslice CwF T) Γ)
+
     CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
-    CwFHToDepPoly CwF .Tm Γ Ty = CwF .TmP Ty -- not sure if this is what I want, probably not, it feels like one wants to involve substitutions here
+    CwFHToDepPoly CwF .Tm Γ Ty = {!   !} 
+        -- TmP of TyP is actually correct here, since there is only 
     CwFHToDepPoly CwF .⇑ t = {!   !}
 
 
