@@ -6,6 +6,7 @@ open import Cubical.Foundations.Prelude
 
 open import Cubical.Data.Sum
 open import Cubical.Data.Sigma
+open import Cubical.Data.Bool
 
 module TyStr where
 
@@ -25,7 +26,11 @@ module TyStr where
 
   ⌈_⌉ : {𝕋 : TyStr} → Ctx 𝕋 → TyStr
   ⌈_⌉ {𝕋} ϵ = 𝕋
-  ⌈_⌉ (T ► Γ) = ⌈ Γ ⌉
+  ⌈_⌉ (T ► Γ) = ⌈ Γ ⌉  
+
+  isEmptyCtx : {𝕋 : TyStr} (Γ : Ctx 𝕋) → Bool
+  isEmptyCtx ϵ = true
+  isEmptyCtx (T ► Γ) = false
 
   infixl 30 _++_
 
