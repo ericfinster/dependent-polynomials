@@ -50,6 +50,9 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     open CwFH
     open Category public
 
+    CwFHId : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (CwFH Ctxt T)
+    CwFHId CwF = CwF
+
     CwFHTerminal : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
             → {Γ : Ctxt .ob} → (Ty : CwF .TyP Γ) → (TCategory (SliceCat Ctxt (cextOb CwF Γ Ty))) 
     CwFHTerminal {T = T} CwF {Γ = Γ} Ty₁ = TCat-Slice (cextOb CwF Γ Ty₁) T
@@ -77,28 +80,27 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsNat f g M = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) ((ConsNat CwF (S-hom f) (S-hom g) M))
     CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsId f σ = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) (ConsId CwF (S-hom f) σ)
 
-    CwFHToTyStr : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → TyStr
-    CwFHToTyStr {T = T} CwF .Ty = TyP CwF (TCategory.TerObj T)
-    CwFHToTyStr {T = T} CwF // x = CwFHToTyStr (CwFHslice CwF x)
 
-    -- TyStr Ctxts are Ctxt Obj
-    ContextToType : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
-            → (Γ : (Ctx(CwFHToTyStr CwF))) → (Ctxt .ob)
-    ContextToType {T = Ter} CwF ϵ = TCategory.TerObj Ter
-    ContextToType {T = Ter} CwF (T ► Γ) = S-ob (ContextToType (CwFHslice CwF T) Γ)
-
-    CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
-                 → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
-    CwFHToDepPoly {T = T} CwF .Tm Γ Ty = TmP CwF Ty 
-        -- TmP of TyP is actually correct here, Ty is in the empty context and whatver we substitute in there, the terms stay the same
-    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .Tm x x₁ = {!  cextHomM CwF  !}
-    CwFHToDepPoly {T = T} CwF .⇑ {Γ = Γ} t .⇑ t₁ = {!   !}
-
-    -- I'm thinking there could be a way to build up substitutions like one builds up contexts, so we start on the term level with the 
-    -- empty substitution. And then like we build up the domain context, we build up substitutions into it
-
-
-
-
+        -- Probably not needed but maybe nice to have, slices over the object itself not over the Ctxt Extension as CwFHSlice does
+    CwFHSliceHelp : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+            → (Γ : Ctxt .ob) → (CwFH (SliceCat Ctxt Γ) (TCat-Slice Γ T))
+    CwFHSliceHelp CwF Γ .TyP x = TyP CwF (S-ob x)
+    CwFHSliceHelp CwF Γ .TmP A = TmP CwF A
+    CwFHSliceHelp CwF Γ .TyPm f x = (TyPm CwF (S-hom f)) x
+    CwFHSliceHelp CwF Γ .TmPm f σ x = (TmPm CwF (S-hom f) σ) x
+    CwFHSliceHelp CwF Γ .TyPmId σ = TyPmId CwF σ
+    CwFHSliceHelp CwF Γ .TyPmComp σ f g = TyPmComp CwF σ (S-hom f) (S-hom g)
+    CwFHSliceHelp CwF Γ .TmPmId tm = TmPmId CwF tm
+    CwFHSliceHelp CwF Γ .TmPmComp tm f g = TmPmComp CwF tm (S-hom f) (S-hom g)
+    CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .cextOb Γ₁ σ = sliceob (Ctxt ._⋆_ (CwF .cextHom1 σ) (S-arr Γ₁))
+    CwFHSliceHelp CwF Γ .cextHom1 σ = slicehom (CwF .cextHom1 σ) refl
+    CwFHSliceHelp CwF Γ .cextHom2 σ = CwF .cextHom2 σ
+    CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .cextHomM {Γ₁} {Δ} f {σ} M = slicehom (cextHomM CwF ((S-hom f)) M) 
+        ((sym (⋆Assoc Ctxt (cextHomM CwF (S-hom f) M) (cextHom1 CwF σ) (S-arr Δ))) ∙ 
+        (⟨_⟩⋆⟨_⟩ Ctxt (sym (CwF .ConsL (S-hom f) M)) (refl {x = S-arr Δ})) ∙ (S-comm f))
+    CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .ConsL f M = SliceHom-≡-intro' Ctxt Γ (ConsL CwF (S-hom f) M)
+    CwFHSliceHelp CwF Γ .ConsR f M = ConsR CwF ((S-hom f)) M
+    CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .ConsNat f g M = SliceHom-≡-intro' Ctxt Γ (ConsNat CwF (S-hom f) (S-hom g) M)
+    CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .ConsId f σ = SliceHom-≡-intro' Ctxt Γ (ConsId CwF (S-hom f) σ)
 
 

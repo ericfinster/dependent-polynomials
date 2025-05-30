@@ -27,6 +27,7 @@ open SliceOb
 TCat-Slice : {ℓ ℓ' : Level} {C : Category ℓ ℓ'} (c : Category.ob C) → (T : TCategory C) → (TCategory (SliceCat C c))
 TCat-Slice {ℓ} {ℓ'} {C = C} c T .TerObj =  sliceob (id T {c})
 TCat-Slice {ℓ} {ℓ'} {C} c T .TermPr {x} = slicehom (S-arr x) (⋆IdR T (S-arr x))
-TCat-Slice {ℓ} {ℓ'} {C} c T .TermPrUn {x} (slicehom S-hom₁ S-comm₁) (slicehom S-hom₂ S-comm₂) = SliceHom-≡-intro' C c  ((sym (⋆IdR T S-hom₁)) ∙ S-comm₁ ∙ (sym S-comm₂) ∙  (⋆IdR T S-hom₂)) 
+TCat-Slice {ℓ} {ℓ'} {C} c T .TermPrUn {x} (slicehom S-hom₁ S-comm₁) (slicehom S-hom₂ S-comm₂) = 
+        SliceHom-≡-intro' C c  ((sym (⋆IdR T S-hom₁)) ∙ S-comm₁ ∙ (sym S-comm₂) ∙  (⋆IdR T S-hom₂)) 
 
 
