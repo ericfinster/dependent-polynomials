@@ -50,17 +50,24 @@ module CwFHToDepPoly where
                 → (Ctx : (Ctx(CwFHToTyStr CwF))) → {Ctxt2 : Category (SliceLevel CwF Ctx) ℓ'} → {T2 : TCategory Ctxt2} 
                 → (CwFH (CatOr CwF Ctx Ctxt2) (TCatOr CwF Ctx T2))
     SliceAlongContext CwF ϵ = CwF
-    SliceAlongContext CwF (T ► Ctx₁) = {!   !}
+    SliceAlongContext CwF (T ► ϵ) = {! CwFHslice CwF T !}
+    SliceAlongContext CwF (T ► (T₁ ► Ctx₁)) = SliceAlongContext (CwFHslice CwF T) ((T₁ ► Ctx₁))
 
+    -- SliceAlongContext (CwFHslice CwF T) (T₁ ► Ctx₁)
     -- Ctxt2
     -- SliceAlongContext (CwFHslice CwF T) Γ
 
     -- I want to be able to treat a context in ⌈ Γ ⌉ like an Object in my CwF 
     -- to be able to use the CwF properties in helpCwFToDepPoly
-    ContextToObj2 : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T)
+    ContextToObj2 : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) -- we can probably do this way easier by just appending the two contexts which is ++ in TyStr 
             → {Γ : (Ctx(CwFHToTyStr CwF))} → (Ct : (Ctx ⌈ Γ ⌉)) → (Ctxt .ob)
     ContextToObj2 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} ϵ = ContextToObj CwF Γ
-    ContextToObj2 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} (T₁ ► Ct) = {!   !}
+    ContextToObj2 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} (T₁ ► Ct) = {!  SliceAlongContext CwF Γ  !}
+
+    ContextToObj3 : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
+            → {Γ : (Ctx(CwFHToTyStr CwF))} → (Ct : (Ctx ⌈ Γ ⌉)) → (Ctxt .ob)
+    ContextToObj3 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} ϵ = ContextToObj CwF Γ
+    ContextToObj3 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} (T₁ ► Ct) = ContextToObj CwF (Γ ++ (T₁ ► Ct))
  
   {-
   Probably not needed at least not for my current train of thought
@@ -77,26 +84,28 @@ module CwFHToDepPoly where
     -- according to it's dependency on the level below
     -- right now the problem is that I can't relly use a Ctxt in ⌈ Γ ⌉ since I don't know how to access it's CwF structure
     -- which it retains since it comes from CwF to TyStr
-    helpCwFHToDepPoly : ∀ {ℓ} {ℓ'} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt}
+    helpCwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt}
          {CwF : CwFH Ctxt T} {Γ : Ctx (CwFHToTyStr CwF)}
          {T = T₁ : CwFH.TyP CwF (TCategory.TerObj T)} →
        Hom[ Ctxt , ContextToObj CwF Γ ]
        (CwFH.cextOb CwF (T .TCategory.TerObj) T₁) →
        DepPoly ⌈ Γ ⌉ (CwFHToTyStr (CwFHslice CwF T₁))
     helpCwFHToDepPoly {T = T₁} {CwF} {Γ} {T = T₂} x .Tm x₁ x₂ = CwFH.TmP CwF {(ContextToObj CwF Γ)} ((CwFH.TyPm CwF x) x₂)
-    helpCwFHToDepPoly {T = T₁} {CwF} {Γ} {T = T₂} x .⇑ {Γ₁} t = {! ⌈ Γ ⌉  !}
+    helpCwFHToDepPoly {T = T₁} {CwF} {Γ} {T = T₂} x .⇑ {Γ₁} {T} t = {! CwFH.TmPm CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)})  !}
 
         -- cextHomM (CwFHslice CwF T₂) 
     -- (TyPm CwF x) x₂ 
     -- TmP CwF {(ContextToObj CwF Γ)}
-
+    -- CwFH.cextHomM CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)}
+    -- CwFH.TmPm CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)}) wants a term in the terminal of T1 
+    -- ((CwFH.TyPm CwF x) T) is a Type in CtxtToObj
     
 
     CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
                  → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
     CwFHToDepPoly CwF .Tm x x₁ = CwFH.TmP CwF x₁ 
         -- since we have a substitution into the empty ctxt we just return the terms
-    CwFHToDepPoly CwF .⇑ = {!   !} 
+    CwFHToDepPoly CwF .⇑ t = {!   !} 
     
     -- here I'm thinking I want to use helpCwFHToDepPoly the idea is to pass the extended substitution along 
     -- and substitute in the new Terms in the resulting polynomial
