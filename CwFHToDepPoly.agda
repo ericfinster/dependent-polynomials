@@ -103,10 +103,31 @@ module CwFHToDepPoly where
 
     CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
                  → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
-    CwFHToDepPoly CwF .Tm x x₁ = CwFH.TmP CwF x₁ 
+    CwFHToDepPoly {T = T} CwF .Tm Γ A = CwFH.TmP CwF {Γ = ContextToObj CwF Γ} (CwFH.TyPm CwF (TCategory.TermPr T) A) 
         -- since we have a substitution into the empty ctxt we just return the terms
-    CwFHToDepPoly CwF .⇑ t = {!   !} 
-    
+    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = {! !} 
+
+      -- ⌈_⌉s {CwFHToTyStr (CwFHslice CwF A)} {CwFHToTyStr (CwFHslice CwF A)} {have} 
+  -- ⌈_⌉s : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+  --   → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
+  --   → Subst M Γ Δ
+  --   → DepPoly ⌈ Γ ⌉ ⌈ Δ ⌉
+
+      where
+
+        Γobj : Ctxt .ob
+        Γobj = ContextToObj CwF Γ
+
+        Γobj→A : Ctxt [ Γobj , CwFH.cextOb CwF (TCategory.TerObj T) A ]
+        Γobj→A = CwFH.cextHomM CwF (TCategory.TermPr T) t
+
+        have : DepPoly (CwFHToTyStr (CwFHslice CwF A)) (CwFHToTyStr (CwFHslice CwF A))
+        have = CwFHToDepPoly (CwFHslice CwF A)
+
+
+      -- ⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm Γ T)
+      --   → DepPoly ⌈ Γ ⌉ (𝕋 // T)
+
     -- here I'm thinking I want to use helpCwFHToDepPoly the idea is to pass the extended substitution along 
     -- and substitute in the new Terms in the resulting polynomial
 

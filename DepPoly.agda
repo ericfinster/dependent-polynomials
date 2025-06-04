@@ -79,11 +79,13 @@ module DepPoly where
   Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
     cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
-  ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
-    → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
-    → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
-  ⌈ f ∣ ● ⌉⇒ = f
-  ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
+  postulate
+  
+    ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+      → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
+      → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
+    -- ⌈ f ∣ ● ⌉⇒ = f
+    -- ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
 
   -- ⊚ is functorial in each argument
   ⊚-func-left : {𝕊 𝕋 𝕍 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
