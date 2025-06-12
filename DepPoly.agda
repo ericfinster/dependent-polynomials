@@ -1,3 +1,4 @@
+
 --
 --  DepPoly.agda - Dependent Polynomials
 --
@@ -18,18 +19,26 @@ module DepPoly where
   open DepPoly public 
 
   data Subst {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Ctx 𝕊 → Ctx 𝕋 → Type where
-    ● : Subst M ϵ ϵ
+    ● : (Γ : Ctx 𝕊) → Subst M Γ ϵ
     cns : (Γ : Ctx 𝕊) (T : Ty 𝕋) (t : Tm M Γ T)
       → (Γ' : Ctx ⌈ Γ ⌉)
       → (Δ' : Ctx (𝕋 // T))
       → Subst (⇑ M t) Γ' Δ'
       → Subst M (Γ ++ Γ') (T ► Δ') 
-
+      
+{-
+  _*_ : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋} → {Γ Φ Δ : Ctx 𝕋} → (ɣ : Subst M Γ Φ) 
+      → (φ : Subst M Φ Δ) → (Subst M Γ Δ)
+  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (● .Φ) = ● Γ
+  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (cns Γ₁ T t Γ' Δ' φ) = {!   !}
+-}
+      
   ⌈_⌉s : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
     → Subst M Γ Δ
     → DepPoly ⌈ Γ ⌉ ⌈ Δ ⌉
-  ⌈_⌉s {M = M} ● = M
+  ⌈_⌉s {M = M} (● Γ) .Tm Γ' x₁ = M .Tm (Γ ++ Γ') x₁
+  ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (sym (λ i → (DepPoly (++-ceil Γ Γ₁ (~ i)) (𝕋 // T)))) (M .⇑ t)
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) =
     transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
@@ -37,7 +46,7 @@ module DepPoly where
     → {Γ : Ctx 𝕊} {A : Ty 𝕋} (t : Tm P Γ A)
     → Subst P Γ (A ► ϵ)
   tmToSubst {P = P} {Γ} {A} t =
-    transport (λ i → Subst P (++-unit-left Γ i) (A ► ϵ)) (cns Γ A t ϵ ϵ ●)
+    transport (λ i → Subst P (++-unit-left Γ i) (A ► ϵ)) (cns Γ A t ϵ ϵ (● ϵ)) 
 
   infixl 30 _⊚_
   
@@ -56,7 +65,7 @@ module DepPoly where
   ⇑ (IdPoly 𝕋) (idT T) = IdPoly (𝕋 // T)
 
   idSubst : {𝕋 : TyStr} (Γ : Ctx 𝕋) → Subst (IdPoly 𝕋) Γ Γ
-  idSubst ϵ = ●
+  idSubst ϵ = (● ϵ)
   idSubst (T ► Γ) = cns (T ► ϵ) T (idT T) Γ Γ (idSubst Γ)
 
   infixr 20 _⇒_
@@ -75,7 +84,7 @@ module DepPoly where
     → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
     → Subst P Γ Δ
     → Subst Q Γ Δ
-  Subst⇒ f ● = ● 
+  Subst⇒ {Q = Q} f (● Γ) = ● {M = Q} Γ 
   Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
     cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
