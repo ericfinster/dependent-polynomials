@@ -80,6 +80,25 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsNat f g M = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) ((ConsNat CwF (S-hom f) (S-hom g) M))
     CwFHslice {Ctxt = Ctxt} CwF {Γ = Γ} Ty₁ .ConsId f σ = SliceHom-≡-intro' Ctxt (cextOb CwF Γ Ty₁) (ConsId CwF (S-hom f) σ)
 
+    appf : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → {Γ Δ : Ctxt .ob} → (f : Ctxt [ Γ , Δ ]) → (TyP CwF Δ) → (TyP CwF Γ)
+    appf CwF f x = TyPm CwF f x
+
+{-
+    WeakeningTy : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (Γ : Ctxt .ob)
+                → (A : TyP CwF Γ) → (B : TyP CwF Γ) → (TyP CwF (cextOb CwF Γ A))
+    WeakeningTy CwF Γ A B = TyPm CwF (cextHom1 CwF A) B
+-}
+
+    WeakeningTy : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+        → (Γ Δ : Ctxt .ob) → (f : Ctxt [ Γ , Δ ]) → (A : TyP CwF Δ)
+        → (Ctxt [ (cextOb CwF Γ ((TyPm CwF f) A)) , (cextOb CwF Δ A) ])
+    WeakeningTy {ℓ} {Ctxt} {T} CwF Γ Δ f A = cextHomM CwF (Ctxt ._⋆_ (cextHom1 CwF ((TyPm CwF f) A)) f) 
+        (transport (sym (λ i → 
+        (TmP CwF (TyPmComp CwF A (cextHom1 CwF ((TyPm CwF f) A)) f (~ i))))) (cextHom2 CwF ((TyPm CwF f) A)))
+
+    -- cextHomM CwF (Ctxt ._⋆_ (cextHom1 CwF ((TyPm CwF f) A)) f)
+        -- (cextHom2 CwF ((TyPm CwF f) A))
+
 
         -- Probably not needed but maybe nice to have, slices over the object itself not over the Ctxt Extension as CwFHSlice does
     CwFHSliceHelp : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
