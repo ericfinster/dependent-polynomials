@@ -84,11 +84,21 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     appf CwF f x = TyPm CwF f x
 
     WeakeningTy : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
-        → (Γ Δ : Ctxt .ob) → (f : Ctxt [ Γ , Δ ]) → (A : TyP CwF Δ)
+        → {Γ Δ : Ctxt .ob} → (f : Ctxt [ Γ , Δ ]) → (A : TyP CwF Δ)
         → (Ctxt [ (cextOb CwF Γ ((TyPm CwF f) A)) , (cextOb CwF Δ A) ])
-    WeakeningTy {ℓ} {Ctxt} {T} CwF Γ Δ f A = cextHomM CwF (Ctxt ._⋆_ (cextHom1 CwF ((TyPm CwF f) A)) f) 
+    WeakeningTy {ℓ} {Ctxt} {T} CwF {Γ} {Δ} f A = cextHomM CwF (Ctxt ._⋆_ (cextHom1 CwF ((TyPm CwF f) A)) f) 
         (transport (sym (λ i → 
         (TmP CwF (TyPmComp CwF A (cextHom1 CwF ((TyPm CwF f) A)) f (~ i))))) (cextHom2 CwF ((TyPm CwF f) A)))
+    
+    TmSection : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+        → {Γ : Ctxt .ob} {A : (TyP CwF Γ)} (t : (TmP CwF A)) 
+        → (Ctxt [ Γ , (cextOb CwF Γ A) ])
+    TmSection {ℓ} {Ctxt} {T} CwF {Γ} {A} t = cextHomM CwF (Ctxt .id) ((TmPm CwF (Ctxt .id) A) t)
+
+    TmSectionIsSection :  {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+        → {Γ : Ctxt .ob} {A : (TyP CwF Γ)} (t : (TmP CwF A))
+        → (Ctxt ._⋆_ (TmSection CwF t) (cextHom1 CwF A)) ≡ (Ctxt .id)
+    TmSectionIsSection {Ctxt = Ctxt} CwF {A = A} t = sym (ConsL CwF (Ctxt .id) ((TmPm CwF (Ctxt .id) A) t))
 
     CwFHSliceHelp : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
             → (Γ : Ctxt .ob) → (CwFH (SliceCat Ctxt Γ) (TCat-Slice Γ T))
