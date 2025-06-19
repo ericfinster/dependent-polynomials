@@ -1,4 +1,3 @@
-
 --
 --  DepPoly.agda - Dependent Polynomials
 --
@@ -25,22 +24,14 @@ module DepPoly where
       → (Δ' : Ctx (𝕋 // T))
       → Subst (⇑ M t) Γ' Δ'
       → Subst M (Γ ++ Γ') (T ► Δ') 
-      
-{-
-  _*_ : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋} → {Γ Φ Δ : Ctx 𝕋} → (ɣ : Subst M Γ Φ) 
-      → (φ : Subst M Φ Δ) → (Subst M Γ Δ)
-  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (● .Φ) = ● Γ
-  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (cns Γ₁ T t Γ' Δ' φ) = {!   !}
--}
-      
+  
   ⌈_⌉s : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
     → Subst M Γ Δ
     → DepPoly ⌈ Γ ⌉ ⌈ Δ ⌉
   ⌈_⌉s {M = M} (● Γ) .Tm Γ' x₁ = M .Tm (Γ ++ Γ') x₁
   ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (sym (λ i → (DepPoly (++-ceil Γ Γ₁ (~ i)) (𝕋 // T)))) (M .⇑ t)
-  ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) =
-    transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
+  ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
   tmToSubst : {𝕊 𝕋 : TyStr} {P : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} {A : Ty 𝕋} (t : Tm P Γ A)
@@ -56,6 +47,13 @@ module DepPoly where
     Σ[ σ ∈ Subst M Γ Δ ]
     Tm N Δ T 
   ⇑ (M ⊚ N) (Δ , σ , t) = ⌈ σ ⌉s ⊚ ⇑ N t
+
+{-
+  _*_ : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋} → {Γ Φ Δ : Ctx 𝕋} → (ɣ : Subst M Γ Φ) 
+      → (φ : Subst M Φ Δ) → (Subst M Γ Δ)
+  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (● .Φ) = ● Γ
+  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (cns Γ₁ T t Γ' Δ' φ) = cns Γ T (⌈ ɣ ⌉s .Tm Γ₁ t) Γ' Δ' (ɣ * φ)
+-}
 
   data IdTm (𝕋 : TyStr) : Ctx 𝕋 → Ty 𝕋 → Type where
     idT : (T : Ty 𝕋) → IdTm 𝕋 (T ► ϵ) T 
@@ -88,13 +86,18 @@ module DepPoly where
   Subst⇒ {P = P} {Q} f (cns Γ T t Γ' Δ' σ) =
     cns Γ T (Tm⇒ f t) Γ' Δ' (Subst⇒ (⇑⇒ f t) σ)
 
+
   postulate
-  
+
     ⌈_∣_⌉⇒ : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
       → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
       → ⌈ σ ⌉s ⇒ ⌈ Subst⇒ f σ ⌉s
-    -- ⌈ f ∣ ● ⌉⇒ = f
-    -- ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {!⌈ ⇑⇒ f t ∣ σ ⌉⇒ !}
+  -- ⌈ f ∣ ● _ ⌉⇒ .Tm⇒ x = f. Tm⇒ x
+  -- ⌈ f ∣ ● _ ⌉⇒ .⇑⇒ t = {!   !}
+  -- ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {! transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉)  !}
+
+  -- ⌈ ⇑⇒ f t ∣ σ ⌉⇒
+
 
   -- ⊚ is functorial in each argument
   ⊚-func-left : {𝕊 𝕋 𝕍 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)

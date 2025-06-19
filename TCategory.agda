@@ -30,4 +30,8 @@ TCat-Slice {ℓ} {ℓ'} {C} c T .TermPr {x} = slicehom (S-arr x) (⋆IdR T (S-ar
 TCat-Slice {ℓ} {ℓ'} {C} c T .TermPrUn {x} (slicehom S-hom₁ S-comm₁) (slicehom S-hom₂ S-comm₂) = 
         SliceHom-≡-intro' C c  ((sym (⋆IdR T S-hom₁)) ∙ S-comm₁ ∙ (sym S-comm₂) ∙  (⋆IdR T S-hom₂)) 
 
+IsId : {ℓ : Level} {C : Category ℓ ℓ} → (T : TCategory C) → (f : C [ (TerObj T) , (TerObj T) ]) → (id T {TerObj T}) ≡ f
+IsId T f = TermPrUn T (id T) f
+
+
 

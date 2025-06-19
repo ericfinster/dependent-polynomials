@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Cubical.Foundations.Prelude 
 
 open import Cubical.Categories.Category.Base 
@@ -19,94 +21,77 @@ module CwFHToDepPoly where
     CwFHToTyStr {T = T} CwF .Ty = CwFH.TyP CwF (TCategory.TerObj T)
     CwFHToTyStr {T = T} CwF // x = CwFHToTyStr (CwFHslice CwF x)
 
+    DropCtxLvl : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
+            → (A : (CwFH.TyP CwF (TCategory.TerObj T))) → (Γ : (Ctx (CwFHToTyStr (CwFHslice CwF A))))
+            → (Ctx (CwFHToTyStr CwF))
+    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A ϵ = ?
+    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A (T₁ ► Γ) = ?
+
     -- TyStr Ctxts are Ctxt Obj
     ContextToObj : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
             → (Γ : (Ctx(CwFHToTyStr CwF))) → (Ctxt .ob)
     ContextToObj {T = Ter} CwF ϵ = TCategory.TerObj Ter
     ContextToObj {T = Ter} CwF (T ► Γ) = S-ob (ContextToObj (CwFHslice CwF T) Γ)
 
-    -- returns the level of the objects resulting from recusively slicing over Types in a ctxt
-    SliceLevel : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
-                → (Γ : (Ctx(CwFHToTyStr CwF))) → (Level)
-    SliceLevel {ℓ} CwF ϵ = ℓ
-    SliceLevel CwF (T ► Γ) = SliceLevel (CwFHslice CwF T) Γ
+    ContextToObjArr : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
+            → (Γ : (Ctx(CwFHToTyStr CwF))) → (Ctxt [ (ContextToObj CwF Γ) , (TCategory.TerObj T) ])
+    ContextToObjArr {Ctxt = Ctxt} CwF ϵ = id Ctxt
+    ContextToObjArr {Ctxt = Ctxt} {T = T} CwF (T' ► Γ) = Ctxt ._⋆_ (S-hom (ContextToObjArr (CwFHslice CwF T') Γ)) (TCategory.TermPr T {CwFH.cextOb CwF (TCategory.TerObj T) T'})
 
-    -- allows me to alter the return Type of SliceAlongContext depending on if the Ctxt is empty
-    CatOr : {ℓ ℓ' : Level} {Ctxt1 : Category ℓ ℓ'} {T : TCategory Ctxt1} → (CwF : CwFH Ctxt1 T) 
-              → (Γ : (Ctx(CwFHToTyStr CwF))) → (Ctxt2 : Category (SliceLevel CwF Γ) ℓ') → (Category (SliceLevel CwF Γ) ℓ')
-    CatOr {Ctxt1 = Ctxt1} CwF ϵ Ctxt2 = Ctxt1
-    CatOr CwF (T ► Γ) Ctxt2 = Ctxt2
+    TyToCtxt : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T)
+            → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Ctx (CwFHToTyStr CwF))
+    TyToCtxt CwF A = A ► ϵ
 
-    -- Same as CatOr but for the added Terminal object structure
-    TCatOr : {ℓ ℓ' : Level} {Ctxt1 : Category ℓ ℓ'} {T1 : TCategory Ctxt1} → (CwF : CwFH Ctxt1 T1) 
-             → (Γ : (Ctx(CwFHToTyStr CwF))) → {Ctxt2 : Category (SliceLevel CwF Γ) ℓ'} → (T2 : TCategory Ctxt2)
-             → (TCategory (CatOr CwF Γ Ctxt2))
-    TCatOr {T1 = T1} CwF ϵ T2 = T1
-    TCatOr CwF (T ► Γ) T2 = T2
-  
-    -- Given some TyStr Ctxt I want to repeatedly slice over the Obj build up by extending with the types in the Ctxt
-    -- The idea is to be able to handle ⌈ Γ ⌉ better, since I want to use it's inherent CwF structure but can't at the moment
-    SliceAlongContext : {ℓ ℓ' : Level} {Ctxt1 : Category ℓ ℓ'} {T1 : TCategory Ctxt1} → (CwF : CwFH Ctxt1 T1) 
-                → (Ctx : (Ctx(CwFHToTyStr CwF))) → {Ctxt2 : Category (SliceLevel CwF Ctx) ℓ'} → {T2 : TCategory Ctxt2} 
-                → (CwFH (CatOr CwF Ctx Ctxt2) (TCatOr CwF Ctx T2))
-    SliceAlongContext CwF ϵ = CwF
-    SliceAlongContext CwF (T ► ϵ) = {! CwFHslice CwF T !}
-    SliceAlongContext CwF (T ► (T₁ ► Ctx₁)) = SliceAlongContext (CwFHslice CwF T) ((T₁ ► Ctx₁))
+    ObjToCtxt : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T)
+            → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : Ctx (CwFHToTyStr (CwFHslice CwF A)))
+            → (Ctx (CwFHToTyStr CwF))
+    ObjToCtxt CwF A Γ = A ► Γ
 
-    -- SliceAlongContext (CwFHslice CwF T) (T₁ ► Ctx₁)
-    -- Ctxt2
-    -- SliceAlongContext (CwFHslice CwF T) Γ
+    -- This could be simplified by TmToSubst
+    SubstToSubst : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (Γ : Ctx (CwFHToTyStr CwF))
+          {M : DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF)} → (A : CwFH.TyP CwF (TCategory.TerObj T))
+          (t : Tm M Γ A) → (Subst M Γ (A ► ϵ))
+    SubstToSubst {ℓ} {Ctxt} {T} CwF Γ {M} A t = subst (λ Γ → Subst M Γ (A ► ϵ)) (++-unit-left Γ) (cns Γ A t ϵ ϵ (● ϵ))
 
-    -- I want to be able to treat a context in ⌈ Γ ⌉ like an Object in my CwF 
-    -- to be able to use the CwF properties in helpCwFToDepPoly
-    ContextToObj2 : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) -- we can probably do this way easier by just appending the two contexts which is ++ in TyStr 
-            → {Γ : (Ctx(CwFHToTyStr CwF))} → (Ct : (Ctx ⌈ Γ ⌉)) → (Ctxt .ob)
-    ContextToObj2 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} ϵ = ContextToObj CwF Γ
-    ContextToObj2 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} (T₁ ► Ct) = {!  SliceAlongContext CwF Γ  !}
+    ContextToSliceOb : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (Γ : Ctx (CwFHToTyStr CwF))
+        → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A)) →  (Category.ob (SliceCat Ctxt (CwFH.cextOb CwF (TCategory.TerObj T) A)))
+    ContextToSliceOb {T = T} CwF Γ A t = sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {ContextToObj CwF Γ}) t)
 
-    ContextToObj3 : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
-            → {Γ : (Ctx(CwFHToTyStr CwF))} → (Ct : (Ctx ⌈ Γ ⌉)) → (Ctxt .ob)
-    ContextToObj3 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} ϵ = ContextToObj CwF Γ
-    ContextToObj3 {ℓ} {ℓ'} {Ctxt} {T} CwF {Γ} (T₁ ► Ct) = ContextToObj CwF (Γ ++ (T₁ ► Ct))
- 
-  {-
-  Probably not needed at least not for my current train of thought
-  seems like a more crude version of what is now helpCwFHToDepPoly
-    CwFHToDepPolyAscend : {ℓ ℓ' ℓ'' ℓ''' : Level} {Ctxt1 : Category ℓ ℓ'} {Ctxt2 : Category ℓ'' ℓ'''} 
-      {T1 : TCategory Ctxt1} {T2 : TCategory Ctxt2} (CwF1 : CwFH Ctxt1 T1) → (CwF2 : CwFH Ctxt2 T2) 
-      → (DepPoly (CwFHToTyStr CwF1) (CwFHToTyStr CwF2))  
-    CwFHToDepPolyAscend CwF1 CwF2 .Tm x x₁ = {!   !}
-    CwFHToDepPolyAscend CwF1 CwF2 .⇑ = {!   !}
-  -}
+    nextPr : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
+                → (Γ : Ctxt .ob) → (A B : (CwFH.TyP CwF Γ)) 
+                → (Ctxt [ (CwFH.cextOb CwF (CwFH.cextOb CwF Γ A) ((CwFH.TyPm CwF (CwFH.cextHom1 CwF A)) B)) , (CwFH.cextOb CwF Γ B) ])
+    nextPr {ℓ} {Ctxt} {T} CwF Γ A B = WeakeningTy CwF (CwFH.cextHom1 CwF A) B
 
-
-    -- helper function to be able to substitute in the resulting Ty we pass to the function, 
-    -- according to it's dependency on the level below
-    -- right now the problem is that I can't relly use a Ctxt in ⌈ Γ ⌉ since I don't know how to access it's CwF structure
-    -- which it retains since it comes from CwF to TyStr
-    helpCwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt}
-         {CwF : CwFH Ctxt T} {Γ : Ctx (CwFHToTyStr CwF)}
-         {T = T₁ : CwFH.TyP CwF (TCategory.TerObj T)} →
-       Hom[ Ctxt , ContextToObj CwF Γ ]
-       (CwFH.cextOb CwF (T .TCategory.TerObj) T₁) →
-       DepPoly ⌈ Γ ⌉ (CwFHToTyStr (CwFHslice CwF T₁))
-    helpCwFHToDepPoly {T = T₁} {CwF} {Γ} {T = T₂} x .Tm x₁ x₂ = CwFH.TmP CwF {(ContextToObj CwF Γ)} ((CwFH.TyPm CwF x) x₂)
-    helpCwFHToDepPoly {T = T₁} {CwF} {Γ} {T = T₂} x .⇑ {Γ₁} {T} t = {! CwFH.TmPm CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)})  !}
-
-        -- cextHomM (CwFHslice CwF T₂) 
-    -- (TyPm CwF x) x₂ 
-    -- TmP CwF {(ContextToObj CwF Γ)}
-    -- CwFH.cextHomM CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)}
-    -- CwFH.TmPm CwF (TCategory.TermPr T₁ {(ContextToObj2 CwF Γ)}) wants a term in the terminal of T1 
-    -- ((CwFH.TyPm CwF x) T) is a Type in CtxtToObj
     
+{-
+    WeakeningCtxt : {ℓ : Level} {Ctxt Ctxt' : Category ℓ ℓ} {T : TCategory Ctxt} {T' : TCategory Ctxt'} (CwF : CwFH Ctxt T) → (CwF' : CwFH Ctxt' T') → (Γ : (Ctx (CwFHToTyStr CwF)))
+                → (A : (CwFH.TyP CwF' (TCategory.TerObj T'))) → (g : Ctxt [ (CwFH.cextOb CwF' (TCategory.TerObj T') A) ,  ]) → (Ctx (CwFHToTyStr (CwFHslice CwF A)))
+    WeakeningCtxt {ℓ} {Ctxt} {T} CwF ϵ A = ϵ
+    WeakeningCtxt {ℓ} {Ctxt} {T} CwF (B ► Γ) A = {! Γ  !} ► {!   !}
+-}
+    CtxtMove : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+                → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (f : Ctxt [ (ContextToObj CwF Γ) , (CwFH.cextOb CwF (TCategory.TerObj T) A) ])
+                → (Ctx (CwFHToTyStr CwF))
+    CtxtMove {ℓ} {Ctxt} {T} CwF A ϵ f = A ► ϵ 
+    CtxtMove {ℓ} {Ctxt} {T} CwF A (B ► Γ) f = A ► ({! S-ob Γ  !} ► {! CtxtMove   !}) 
+    
+    postulate
 
-    CwFHToDepPoly : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
+        NeededCtx : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+            → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T {ContextToObj CwF Γ}) A))
+            → (Ctx (CwFHToTyStr (CwFH.CwFHslice CwF A))) 
+
+    {-# TERMINATING #-}
+    CwFHToDepPoly : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
                  → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
     CwFHToDepPoly {T = T} CwF .Tm Γ A = CwFH.TmP CwF {Γ = ContextToObj CwF Γ} (CwFH.TyPm CwF (TCategory.TermPr T) A) 
-        -- since we have a substitution into the empty ctxt we just return the terms
-    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = {! !} 
+    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = CwFHToDepPoly (CwFHslice CwF A)
+    
+    -- ⌈_⌉s (SubstToSubst CwF Γ {M = CwFHToDepPoly CwF} A t) seems to be the right idea but agda kills itself trying to check if it terminates
+    -- which turns into a problem when trying to prove Monad properties, since then the proof assistant features break
 
+    -- SubstToSubst (CwFHslice CwF A) {M = (CwFHToDepPoly (CwFHslice CwF A))} (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) A)
+    -- (CwFH.TmPm CwF (S-hom (TCategory.TermPr (CwFHTerminal CwF A))) (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) A) t)
       -- ⌈_⌉s {CwFHToTyStr (CwFHslice CwF A)} {CwFHToTyStr (CwFHslice CwF A)} {have} 
   -- ⌈_⌉s : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
   --   → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
@@ -121,20 +106,12 @@ module CwFHToDepPoly where
         Γobj→A : Ctxt [ Γobj , CwFH.cextOb CwF (TCategory.TerObj T) A ]
         Γobj→A = CwFH.cextHomM CwF (TCategory.TermPr T) t
 
+        ΓAobj : (SliceCat Ctxt (CwFH.cextOb CwF (TCategory.TerObj T) A)) .ob
+        ΓAobj = ContextToSliceOb CwF Γ A t
+
         have : DepPoly (CwFHToTyStr (CwFHslice CwF A)) (CwFHToTyStr (CwFHslice CwF A))
         have = CwFHToDepPoly (CwFHslice CwF A)
 
 
       -- ⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm Γ T)
       --   → DepPoly ⌈ Γ ⌉ (𝕋 // T)
-
-    -- here I'm thinking I want to use helpCwFHToDepPoly the idea is to pass the extended substitution along 
-    -- and substitute in the new Terms in the resulting polynomial
-
-    -- I'm thinking there could be a way to build up substitutions like one builds up contexts, so we start on the term level with the 
-    -- empty substitution. And then like we build up the domain context, we build up substitutions into it
-    -- See the substitution defined below
-
--- (cextHomM CwF (TCategory.TermPr T {(ContextToObj CwF Γ)}) ((TmPm CwF (TCategory.TermPr T {(ContextToObj CwF Γ)}) T₁) t)) 
--- {T₁ = T₁}
--- (TmPm (TCategory.TermPr T {(ContextToObj CwF Γ)})

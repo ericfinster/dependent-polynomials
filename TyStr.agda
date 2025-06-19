@@ -28,6 +28,14 @@ module TyStr where
   ⌈_⌉ {𝕋} ϵ = 𝕋
   ⌈_⌉ (T ► Γ) = ⌈ Γ ⌉  
 
+  CtxStep : {𝕋 : TyStr} (Γ : Ctx 𝕋) → TyStr
+  CtxStep {𝕋} ϵ = 𝕋
+  CtxStep {𝕋} (T ► Γ) = 𝕋 // T
+
+  CtxSlice : {𝕋 : TyStr} (Γ : Ctx 𝕋) → (Ctx (CtxStep Γ))
+  CtxSlice ϵ = ϵ
+  CtxSlice (T ► Γ) = Γ 
+
   isEmptyCtx : {𝕋 : TyStr} (Γ : Ctx 𝕋) → Bool
   isEmptyCtx ϵ = true
   isEmptyCtx (T ► Γ) = false

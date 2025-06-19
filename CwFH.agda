@@ -1,6 +1,7 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 
 open import Cubical.Foundations.Prelude 
+open import Cubical.Data.Nat.Base
 
 open import Cubical.Categories.Category.Base 
 open import Cubical.Categories.Presheaf 
@@ -120,5 +121,13 @@ module CwFH where -- like in Hoffmann Syntax and Semantics of dependent Type The
     CwFHSliceHelp CwF Γ .ConsR f M = ConsR CwF ((S-hom f)) M
     CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .ConsNat f g M = SliceHom-≡-intro' Ctxt Γ (ConsNat CwF (S-hom f) (S-hom g) M)
     CwFHSliceHelp {Ctxt = Ctxt} CwF Γ .ConsId f σ = SliceHom-≡-intro' Ctxt Γ (ConsId CwF (S-hom f) σ)
+
+
+
+        
+
+
+
+
 
 
