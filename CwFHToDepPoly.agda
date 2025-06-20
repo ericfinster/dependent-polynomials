@@ -113,6 +113,13 @@ module CwFHToDepPoly where
                 → (Ctx (CwFHToTyStr CwF))
     CtxtMove {ℓ} {Ctxt} {T} CwF A ϵ f = A ► ϵ 
     CtxtMove {ℓ} {Ctxt} {T} CwF A (B ► Γ) f = A ► ({! S-ob Γ  !} ► {! CtxtMove   !}) 
+
+    WeakeningCtxt2 : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+                → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) 
+                → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T {ContextToObj CwF Γ}) A))
+                → (Ctx (CwFHToTyStr (CwFHslice CwF A)))
+    WeakeningCtxt2 CwF A ϵ t = ϵ
+    WeakeningCtxt2 CwF A (T ► Γ) t = (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) T) ► {!   !}
     
     postulate
 
@@ -124,11 +131,13 @@ module CwFHToDepPoly where
             → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T {ContextToObj CwF Γ}) A))
             → (Γ ≡ (A ► (NeededCtx CwF A Γ t)))
 
+
+    -- wont work without terminating pragma
     {-# TERMINATING #-}
     CwFHToDepPoly : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
                  → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
     CwFHToDepPoly {T = T} CwF .Tm Γ A = CwFH.TmP CwF {Γ = ContextToObj CwF Γ} (CwFH.TyPm CwF (TCategory.TermPr T) A) 
-    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = transport (λ i → (DepPoly ⌈(NeededEq CwF A Γ t (~ i))⌉ (CwFHToTyStr (CwFHslice CwF A)))) ?
+    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = transport (λ i → (DepPoly ⌈(NeededEq CwF A Γ t (~ i))⌉ (CwFHToTyStr (CwFHslice CwF A)))) (⌈_⌉s {M = (CwFHToDepPoly (CwFHslice CwF A))} (● (NeededCtx CwF A Γ t)))
     
     -- ⌈_⌉s (SubstToSubst CwF Γ {M = CwFHToDepPoly CwF} A t) seems to be the right idea but agda kills itself trying to check if it terminates
     -- which turns into a problem when trying to prove Monad properties, since then the proof assistant features break
