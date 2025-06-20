@@ -1,5 +1,5 @@
 name: dep-poly
 include: .
 depend: cubical
-flags: --cubical --guardedness
+flags: --cubical --guardedness --rewriting 
 
