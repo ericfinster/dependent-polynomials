@@ -24,8 +24,8 @@ module CwFHToDepPoly where
     DropCtxLvl : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
             → (A : (CwFH.TyP CwF (TCategory.TerObj T))) → (Γ : (Ctx (CwFHToTyStr (CwFHslice CwF A))))
             → (Ctx (CwFHToTyStr CwF))
-    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A ϵ = ?
-    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A (T₁ ► Γ) = ?
+    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A ϵ = {!   !}
+    DropCtxLvl {ℓ} {ℓ'} {Ctxt} {T} CwF A (T₁ ► Γ) = {!   !}
 
     -- TyStr Ctxts are Ctxt Obj
     ContextToObj : {ℓ ℓ' : Level} {Ctxt : Category ℓ ℓ'} {T : TCategory Ctxt} → (CwF : CwFH Ctxt T) 
@@ -47,6 +47,38 @@ module CwFHToDepPoly where
             → (Ctx (CwFHToTyStr CwF))
     ObjToCtxt CwF A Γ = A ► Γ
 
+    IdTy : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T))
+        → (A ≡ (CwFH.TyPm CwF (id Ctxt {TCategory.TerObj T}) A))
+    IdTy CwF A = sym (CwFH.TyPmId CwF A)
+
+    IsIdTy2 : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T)) 
+        → (B : CwFH.TyP CwF (TCategory.TerObj T)) (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A))
+        → ((CwFH.TyPm CwF (id Ctxt {TCategory.TerObj T}) B) ≡ (CwFH.TyPm CwF (Ctxt ._⋆_ (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t) (CwFH.cextHom1 CwF A)) B))
+    IsIdTy2 {Ctxt = Ctxt} {T = T} CwF A B t = cong (λ a → CwFH.TyPm CwF a B) (IsId T ((Ctxt ._⋆_ (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t) (CwFH.cextHom1 CwF A)))) 
+
+    IsIdTy1 : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T)) 
+        → (B : CwFH.TyP CwF (TCategory.TerObj T)) (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A))
+        → (CwFH.TyPm CwF (Ctxt ._⋆_ (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t) (CwFH.cextHom1 CwF A)) B 
+        ≡ ((CwFH.TyPm CwF (S-hom (TCategory.TermPr (CwFHTerminal CwF A) {sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t)}))) (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) B)))
+    IsIdTy1 {T = T} CwF A B t = sym (CwFH.TyPmComp CwF B (S-hom (TCategory.TermPr (CwFHTerminal CwF A) {sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t)})) (CwFH.cextHom1 CwF A))
+
+    IsIdTy : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T)) 
+        → (B : CwFH.TyP CwF (TCategory.TerObj T)) (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A)) 
+        → ((CwFH.TyPm CwF (id Ctxt {TCategory.TerObj T}) B) 
+        ≡ ((CwFH.TyPm CwF (S-hom (TCategory.TermPr (CwFHTerminal CwF A) {sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t)}))) (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) B)))
+    IsIdTy {Ctxt = Ctxt} {T = T} CwF A B t = (IsIdTy2 CwF A B t) ∙ IsIdTy1 CwF A B t
+
+
+    TypEq : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T)) 
+        → (B : CwFH.TyP CwF (TCategory.TerObj T)) (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A)) 
+        → (B ≡ (CwFH.TyPm (CwFHslice CwF A) (TCategory.TermPr (CwFHTerminal CwF A) {sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {TCategory.TerObj T}) t)})) (CwFH.TyPm CwF (CwFH.cextHom1 CwF A) B))
+    TypEq CwF A B t = (IdTy CwF B) ∙ (IsIdTy CwF A B t)
+
+    IsSliceType : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (A : CwFH.TyP CwF (TCategory.TerObj T)) 
+        → (B : CwFH.TyP CwF (TCategory.TerObj T)) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T) A)) 
+        → (CwFH.TyP (CwFHslice CwF A) (sliceob (CwFH.cextHomM CwF (TCategory.TermPr T {(TCategory.TerObj T)}) t)))
+    IsSliceType CwF A B t = B
+
     -- This could be simplified by TmToSubst
     SubstToSubst : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) → (Γ : Ctx (CwFHToTyStr CwF))
           {M : DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF)} → (A : CwFH.TyP CwF (TCategory.TerObj T))
@@ -64,11 +96,18 @@ module CwFHToDepPoly where
 
     
 {-
+
+    Trying to do this in a way that works on every level, so not only pulling back B to 1.A for Gamma = 1.B.C.D.E... 
+    needs a mophism between the two terminal objects.
+    That morphism technically exists by Weakening, but it's in none of the two slice categories
+    which makes it difficult to use the CwF Structure
+
     WeakeningCtxt : {ℓ : Level} {Ctxt Ctxt' : Category ℓ ℓ} {T : TCategory Ctxt} {T' : TCategory Ctxt'} (CwF : CwFH Ctxt T) → (CwF' : CwFH Ctxt' T') → (Γ : (Ctx (CwFHToTyStr CwF)))
                 → (A : (CwFH.TyP CwF' (TCategory.TerObj T'))) → (g : Ctxt [ (CwFH.cextOb CwF' (TCategory.TerObj T') A) ,  ]) → (Ctx (CwFHToTyStr (CwFHslice CwF A)))
     WeakeningCtxt {ℓ} {Ctxt} {T} CwF ϵ A = ϵ
     WeakeningCtxt {ℓ} {Ctxt} {T} CwF (B ► Γ) A = {! Γ  !} ► {!   !}
 -}
+
     CtxtMove : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
                 → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (f : Ctxt [ (ContextToObj CwF Γ) , (CwFH.cextOb CwF (TCategory.TerObj T) A) ])
                 → (Ctx (CwFHToTyStr CwF))
@@ -81,11 +120,15 @@ module CwFHToDepPoly where
             → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T {ContextToObj CwF Γ}) A))
             → (Ctx (CwFHToTyStr (CwFH.CwFHslice CwF A))) 
 
+        NeededEq : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T) 
+            → (A : CwFH.TyP CwF (TCategory.TerObj T)) → (Γ : (Ctx (CwFHToTyStr CwF))) → (t : CwFH.TmP CwF (CwFH.TyPm CwF (TCategory.TermPr T {ContextToObj CwF Γ}) A))
+            → (Γ ≡ (A ► (NeededCtx CwF A Γ t)))
+
     {-# TERMINATING #-}
     CwFHToDepPoly : {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} (CwF : CwFH Ctxt T)
                  → (DepPoly (CwFHToTyStr CwF) (CwFHToTyStr CwF))
     CwFHToDepPoly {T = T} CwF .Tm Γ A = CwFH.TmP CwF {Γ = ContextToObj CwF Γ} (CwFH.TyPm CwF (TCategory.TermPr T) A) 
-    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = CwFHToDepPoly (CwFHslice CwF A)
+    CwFHToDepPoly {Ctxt = Ctxt} {T} CwF .⇑ {Γ} {A} t = transport (λ i → (DepPoly ⌈(NeededEq CwF A Γ t (~ i))⌉ (CwFHToTyStr (CwFHslice CwF A)))) ?
     
     -- ⌈_⌉s (SubstToSubst CwF Γ {M = CwFHToDepPoly CwF} A t) seems to be the right idea but agda kills itself trying to check if it terminates
     -- which turns into a problem when trying to prove Monad properties, since then the proof assistant features break
