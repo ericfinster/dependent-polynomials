@@ -77,13 +77,64 @@ module BSystemToDepPoly where
         -- transport (λ i → (DepPoly (⌈ _⌉BSysEqual (CtxToBSys BS Γ) x (~ i)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))))
     -- (MorphismFix (CtxToBSys BS Γ) x (_↝_.Ty↝ (NeededSubst BS Γ T t) T') t₁)
     -- _↝_.Ty↝ (NeededSubst BS Γ T t) x₁ 
-
     {-# TERMINATING #-}
+    BSystemToDepPolyHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
+                (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
+                (T : TyTmStr.Typ B) (f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ)) 
+                → (DepPoly (BSystemToTyStr (CtxToBSys AS Γ)) (BSystemToTyStr (BSystem.BSlc BS T)))
+    BSystemToDepPolyHelp AS BS Γ T f .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) 
+        x) (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x ○ f) x₁)
+    BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ T f .⇑ {x} {T'} t = transport (λ i → DepPoly (⌈_⌉BSysEqual (CtxToBSys AS Γ) x (~ i)) 
+        (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+        (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
+        ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) x) 
+        (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x)
+        (_↝_.Ty↝ f T')) t)
+        ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T')))
+        {-
+            (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
+        ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) x) 
+        (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x)
+        (_↝_.Ty↝ f T')) t)
+        ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T')))
+
+            (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T)
+        ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x) 
+        T'
+        ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) 
+        ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x)) (_↝_.Ty↝
+        (TerminalProj (CtxToBSys AS Γ)
+        (transport (λ i → Ctx (⌈ AS ⌉BSysEqual Γ i)) x))
+        (_↝_.Ty↝ f T')) t)
+        ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) (transport (λ i → Ctx (⌈ AS ⌉BSysEqual Γ i)) x)) ○ f) T')))
+
+
+        (PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) 
+        ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x)) (_↝_.Ty↝
+        (TerminalProj (CtxToBSys AS Γ)
+        (transport (λ i → Ctx (⌈ AS ⌉BSysEqual Γ i)) x))
+        (_↝_.Ty↝ f T')) t)
+
+        BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T)
+        ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x) T'
+
+        (_↝_.Slc↝ f T')
+
+        transport (λ i → (DepPoly (⌈_⌉BSysEqual AS Γ (~ i))) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+
+        transport (λ i → (DepPoly (⌈_⌉BSysEqual (CtxToBSys AS Γ) 
+        ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x) (~ i))) 
+        (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+        -}
+
+        -- _↝_.Slc↝ f T'
+       -- BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T)
+        -- ((transport (λ i → (Ctx (⌈_⌉BSysEqual AS Γ i)))) x) T'
+    
     BSystemToDepPoly : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (DepPoly (BSystemToTyStr BS) (BSystemToTyStr BS))
-    BSystemToDepPoly {B} BS .Tm Γ x₁ = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) x₁) -- im not sure that this is correct
-    BSystemToDepPoly {B} BS .⇑ {Γ} {T} t .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) 
-                (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) ○ (NeededSubst BS Γ T t)) x₁)
-    BSystemToDepPoly BS .⇑ {Γ} {T} t .⇑ = {!   !}
+    BSystemToDepPoly BS .Tm Γ x₁ = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) x₁)
+    BSystemToDepPoly BS .⇑ {Γ} {T} t = {!   !}
+    
 
         --  (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) ○ (NeededSubst BS Γ T t)) x₁)
     -- (TerminalProj (CtxToBSys BS Γ) x) ○ (NeededSubst BS Γ T t)
