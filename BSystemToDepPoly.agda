@@ -1,3 +1,5 @@
+
+
 open import Cubical.Foundations.Prelude
 
 open import TyStr
@@ -38,9 +40,10 @@ module BSystemToDepPoly where
     TerminalProj {B} BS ϵ = idStr B
     TerminalProj {Bᵇ = Bᵇ} BS (T ► Γ) = (TerminalProj (BSystem.BSlc BS T) Γ) ○ (PreBSystem.wk Bᵇ T)
 
-    TestEq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) 
+    ⌈_⌉BSysEqual : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
             → ⌈ Γ ⌉ ≡ (BSystemToTyStr (CtxToBSys BS Γ))
-    TestEq BS Γ T = {!   !}
+    ⌈_⌉BSysEqual BS ϵ = refl
+    ⌈_⌉BSysEqual BS (T₁ ► Γ) = ⌈_⌉BSysEqual (BSystem.BSlc BS T₁) Γ
 
     EqStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
             → ⌈ (CtxSliceBSys BS Γ T) ⌉ ≡ ⌈ (DropCtx BS T (CtxSliceBSys BS Γ T)) ⌉
@@ -48,16 +51,42 @@ module BSystemToDepPoly where
 
     ActualEq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
             → ⌈ Γ ⌉ ≡ ⌈ (CtxSliceBSys BS Γ T) ⌉
-    ActualEq {B} {Bᵇ} BS Γ T t = {! _↝_.Tm↝ (PreBSystem.sub (CtxToPreSys BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T) t)     !}
+    ActualEq {B} {Bᵇ} BS ϵ T t = {!   !} -- filling this hole is impossible for an arbitrary BSystem, otherwise they would all be stationary
+    ActualEq {B} {Bᵇ} BS (T₁ ► Γ) T t = {!   !}
+
+    -- the fact that the equality above is impossible tells us that CtxSliceBSys is the wrong context
+
 
     postulate
-
+        -- doesn't exist
         NeededEqSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
                 → ⌈ Γ ⌉ ≡ ⌈ (CtxSliceBSys BS Γ T) ⌉ 
+
+    NeededSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
+                → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
+    NeededSubst BS Γ T t = (PreBSystem.sub (CtxToPreSys BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T) t) ○ _↝_.Slc↝ (TerminalProj BS Γ) T
+
+        -- this is enough because of ⌈_⌉BSysEqual
+    MorphismFix : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
+                → (P : (DepPoly (BSystemToTyStr (BSystem.BSlc BS T)) (BSystemToTyStr (BSystem.BSlc BS T))))
+                → ((DepPoly (BSystemToTyStr (CtxToBSys BS Γ)) (BSystemToTyStr (BSystem.BSlc BS T))))
+    MorphismFix BS Γ T f P .Tm x x₁ = {! NeededSubst BS Γ T t  !}
+    MorphismFix BS Γ T f P .⇑ {x} {T'} t = {!    !}
+
+        -- TerminalProj (CtxToBSys BS Γ) x 
+        -- transport (λ i → (DepPoly (⌈ _⌉BSysEqual (CtxToBSys BS Γ) x (~ i)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))))
+    -- (MorphismFix (CtxToBSys BS Γ) x (_↝_.Ty↝ (NeededSubst BS Γ T t) T') t₁)
+    -- _↝_.Ty↝ (NeededSubst BS Γ T t) x₁ 
 
     {-# TERMINATING #-}
     BSystemToDepPoly : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (DepPoly (BSystemToTyStr BS) (BSystemToTyStr BS))
     BSystemToDepPoly {B} BS .Tm Γ x₁ = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) x₁) -- im not sure that this is correct
-    BSystemToDepPoly BS .⇑ {Γ} {T} t = {! transport (λ i → (DepPoly (NeededEqSys BS Γ T t (~ i)) (BSystemToTyStr (BSystem.BSlc BS T)))) (⌈_⌉s {M = (BSystemToDepPoly (BSystem.BSlc BS T))} (● (CtxSliceBSys BS Γ T)))  !}
+    BSystemToDepPoly {B} BS .⇑ {Γ} {T} t .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) 
+                (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) ○ (NeededSubst BS Γ T t)) x₁)
+    BSystemToDepPoly BS .⇑ {Γ} {T} t .⇑ = {!   !}
+
+        --  (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) x)) ○ (NeededSubst BS Γ T t)) x₁)
+    -- (TerminalProj (CtxToBSys BS Γ) x) ○ (NeededSubst BS Γ T t)
 
   --   TyTmStr.Tm↝ (TyTmStr.Tm B x₁)
+  -- transport (λ i → (DepPoly (NeededEqSys BS Γ T t (~ i)) (BSystemToTyStr (BSystem.BSlc BS T)))) (⌈_⌉s {M = (BSystemToDepPoly (BSystem.BSlc BS T))} (● (CtxSliceBSys BS Γ T)))
