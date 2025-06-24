@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+
 
 open import Cubical.Foundations.Prelude
 
@@ -55,12 +55,13 @@ module BSystemToDepPoly where
     TerminalProj {B} BS ϵ = idStr B
     TerminalProj {Bᵇ = Bᵇ} BS (T ► Γ) = (TerminalProj (BSystem.BSlc BS T) Γ) ○ (PreBSystem.wk Bᵇ T)
 
+{-
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → transport (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) ≡
                 (TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ)
     TerminalProjComp BS ϵ Γ' = {!   !}
     TerminalProjComp BS (T ► Γ) Γ' = {! TerminalProjComp (BSystem.BSlc BS T) Γ Γ'  !}
-
+-}
     -- transport (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) ≡
 
 

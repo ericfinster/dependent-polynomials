@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Cubical.Foundations.Prelude 
 
 module BSystems where
@@ -56,8 +56,10 @@ module BSystems where
   (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
   (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T) 
 
+{-
   IdStrLN : (A B : TyTmStr) (f : A ↝ B) → (idStr B) ○ f ≡ f
   IdStrLN A B f = {!  !}
+-}
   
   record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
     coinductive

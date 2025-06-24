@@ -34,26 +34,6 @@ module BSystemToMonad where
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
     BSystemToMonad-μ BS .Tm⇒ (fst₁ , fst₂ , snd₁) = {!   !}
     BSystemToMonad-μ BS .⇑⇒ = {!   !}
-{-
-    NeededSubstVar : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)
-            (T : TyTmStr.Typ B) (T' : (TyTmStr.Typ (TyTmStr.Slc B T)))
-            → (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T') ≡ T'
-    NeededSubstVar BS T T' = {!  (λ i → ((_↝_.Ty↝ (BSystem.sub-of-wk-Typ BS T i)) T')) !}
-
-    BSystemToMonad-ηHelp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)
-            (T : TyTmStr.Typ B)  
-            → IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒
-                (BSystemToDepPolyHelp BS BS (T ► ϵ) T
-                (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
-    BSystemToMonad-ηHelp {Bᵇ = Bᵇ} BS T .Tm⇒ {Γ'} {T'} (idT _) = {! PreBSystem.var (PreBSystem.slc Bᵇ T) T' !}
-    BSystemToMonad-ηHelp BS T .⇑⇒ {Γ} {T'} (idT _) = {! BSystemToMonad-ηHelp (BSystem.BSlc BS T) T'  !}
--}
-    -- transport
-    --            (λ i →
-    --            DepPoly (BSystemToTyStr (BSystem.BSlc BS T))
-    --            (BSystemToTyStr (BSystem.BSlc BS T)))
-
-    -- PreBSystem.var (PreBSystem.slc Bᵇ T) T' 
 
     EqTestSub : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (T' T'' : (TyTmStr.Typ (TyTmStr.Slc B T)))
             → (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) ≡ idStr (TyTmStr.Slc B T)
@@ -81,7 +61,6 @@ module BSystemToMonad where
     BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = {! transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T))  !} 
  -- transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)) 
  -- should work for eta, but there is a constant transport in the goal type confusing me
-    -- (BSystemToMonad-η (BSystem.BSlc BS T))
     
 
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
