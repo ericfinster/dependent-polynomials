@@ -25,14 +25,24 @@ module BSystemToMonad where
         (snd₁ : TyTmStr.Tm (CtxToTyTmStr BS fst₁) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
         → (TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
     AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (● .Γ) snd₁ = {! _↝_.Tm↝ (TerminalProj BS Γ) T snd₁ !}
-    AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (cns Γ₁ T₁ t Γ' Δ' fst₂) snd₁ = {! 
-       transport (TerminalProjComp BS Γ₁ Γ') (TerminalProj BS (Γ₁ ++ Γ')) !}
+    AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (cns Γ₁ T₁ t Γ' Δ' fst₂) snd₁ = {!    !}
 
     -- AppSubst (CtxToBSys BS Γ₁) BS ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ₁ i)))) Γ') T₁
     -- ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ₁ i)))) Γ')
+{-
+    BSystemToMonad-μHelp : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C}
+       (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ)
+       (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))) 
+       (Δ' : Ctx (BSystemToTyStr (BSystem.BSlc BS t)))
+       (t : TyTmStr.Tm somewhere)
+       (P : DepPoly i dont know where) 
+       (ɣ : Subst (DepPoly (BSystemToTyStr (CtxToBSys AS Γ)) (BSystemToTyStr (BSystem.BSlc BS t))) Γ' Δ')
+       → (⌈ ɣ ⌉s ⊚ DepPoly.⇑ P t)
+    BSystemToMonad-μHelp = ?
+-}
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
-    BSystemToMonad-μ BS .Tm⇒ (fst₁ , fst₂ , snd₁) = {!   !}
+    BSystemToMonad-μ BS .Tm⇒ (fst₁ , fst₂ , snd₁) = {!  !}
     BSystemToMonad-μ BS .⇑⇒ = {!   !}
 
     EqTestSub : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (T' T'' : (TyTmStr.Typ (TyTmStr.Slc B T)))
