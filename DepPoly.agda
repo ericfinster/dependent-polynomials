@@ -17,6 +17,16 @@ module DepPoly where
 
   open DepPoly public 
 
+  {-
+
+  DepPoly-≡-intro : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} 
+      → (Tm-≡ : (Γ : Ctx 𝕊) (T : Ty 𝕋) → (Tm P Γ T) ≡ (Tm M Γ T))
+      → (⇑-≡ : (Γ : Ctx 𝕊) (T : Ty 𝕋) (t : Tm P Γ T) → (⇑ P t)
+        ≡ ? )
+  DepPoly-≡-intro = ?
+
+  -}
+
   data Subst {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Ctx 𝕊 → Ctx 𝕋 → Type where
     ● : (Γ : Ctx 𝕊) → Subst M Γ ϵ
     cns : (Γ : Ctx 𝕊) (T : Ty 𝕋) (t : Tm M Γ T)
