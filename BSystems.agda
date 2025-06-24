@@ -21,7 +21,12 @@ module BSystems where
 
   open _↝_
 
-  
+  proj-ty : {A B : TyTmStr} (f g : A ↝ B) → f ≡ g → (T : Typ A) → Ty↝ f T ≡ Ty↝ g T
+  proj-ty f g p T i = Ty↝ (p i) T 
+
+  proj-tm : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) (t : Tm A T) → PathP (λ i → Tm B (proj-ty f g p T i)) (Tm↝ f T t) (Tm↝ g T t)
+  proj-tm {A} {B} f g p T t i = {!Tm↝ (p i) (proj-ty f g p T i)!} 
+
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
     field
