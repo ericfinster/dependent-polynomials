@@ -1,4 +1,5 @@
 
+
 open import Cubical.Foundations.Prelude 
 
 module BSystems where
@@ -25,7 +26,18 @@ module BSystems where
   proj-ty f g p T i = Ty↝ (p i) T 
 
   proj-tm : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) (t : Tm A T) → PathP (λ i → Tm B (proj-ty f g p T i)) (Tm↝ f T t) (Tm↝ g T t)
-  proj-tm {A} {B} f g p T t i = {!Tm↝ (p i) (proj-ty f g p T i)!} 
+  proj-tm {A} {B} f g p T t i = Tm↝ (p i) T t 
+
+  proj-slc : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty f g p T i))) (Slc↝ f T) (Slc↝ g T)
+  proj-slc f g p T i = Slc↝ (p i) T
+
+
+  ↝-≡-intro : (A B : TyTmStr) (f g : A ↝ B) (Ty-eq : (Ty↝ f) ≡ (Ty↝ g)) (Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t))
+      → (Slc-eq : (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (Ty-eq i T))) (Slc↝ f T) (Slc↝ g T)) → (f ≡ g)
+  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Ty↝ = Ty-eq i
+  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Tm↝ T' t = Tm-eq T' t i
+  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Slc↝ T' = Slc-eq T' i 
+  
 
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
@@ -61,10 +73,15 @@ module BSystems where
   (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
   (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T) 
 
-{-
+
+  {-# TERMINATING #-}
   IdStrLN : (A B : TyTmStr) (f : A ↝ B) → (idStr B) ○ f ≡ f
-  IdStrLN A B f = {!  !}
--}
+  IdStrLN A B f = ↝-≡-intro A B ((idStr B) ○ f) f refl (λ T t → refl) (λ T → IdStrLN (Slc A T) (Slc B (Ty↝ f T)) (Slc↝ f T))
+
+  {-# TERMINATING #-}
+  IdStrRN : (A B : TyTmStr) (f : A ↝ B) → f ○ (idStr A) ≡ f
+  IdStrRN A B f = ↝-≡-intro A B (f ○ (idStr A)) f refl (λ T t → refl) (λ T → IdStrRN (Slc A T) (Slc B (Ty↝ f T)) (Slc↝ f T))
+
   
   record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
     coinductive
