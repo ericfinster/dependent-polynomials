@@ -75,12 +75,12 @@ module BSystems where
 
 
   {-# TERMINATING #-}
-  IdStrLN : (A B : TyTmStr) (f : A ↝ B) → (idStr B) ○ f ≡ f
-  IdStrLN A B f = ↝-≡-intro A B ((idStr B) ○ f) f refl (λ T t → refl) (λ T → IdStrLN (Slc A T) (Slc B (Ty↝ f T)) (Slc↝ f T))
+  IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
+  IdStrLN {A} {B} f = ↝-≡-intro A B ((idStr B) ○ f) f refl (λ T t → refl) (λ T → IdStrLN (Slc↝ f T))
 
   {-# TERMINATING #-}
-  IdStrRN : (A B : TyTmStr) (f : A ↝ B) → f ○ (idStr A) ≡ f
-  IdStrRN A B f = ↝-≡-intro A B (f ○ (idStr A)) f refl (λ T t → refl) (λ T → IdStrRN (Slc A T) (Slc B (Ty↝ f T)) (Slc↝ f T))
+  IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
+  IdStrRN {A} {B} f = ↝-≡-intro A B (f ○ (idStr A)) f refl (λ T t → refl) (λ T → IdStrRN (Slc↝ f T))
 
   
   record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where

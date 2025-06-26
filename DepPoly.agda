@@ -3,6 +3,8 @@
 --
 
 open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.Isomorphism
+open import Cubical.Foundations.Transport
 
 open import TyStr 
 
@@ -16,16 +18,17 @@ module DepPoly where
         → DepPoly ⌈ Γ ⌉ (𝕋 // T)
 
   open DepPoly public 
-
-  {-
-
-  DepPoly-≡-intro : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} 
+  
+  -- needs a dependent path but I'm not sure how to define it
+  -- maybe this can be done using a substitution
+  DepPoly-≡-intro : {𝕊 𝕋 : TyStr} {P M : DepPoly 𝕊 𝕋} 
       → (Tm-≡ : (Γ : Ctx 𝕊) (T : Ty 𝕋) → (Tm P Γ T) ≡ (Tm M Γ T))
-      → (⇑-≡ : (Γ : Ctx 𝕊) (T : Ty 𝕋) (t : Tm P Γ T) → (⇑ P t)
-        ≡ ? )
-  DepPoly-≡-intro = ?
+      → (⇑-≡ : (Γ : Ctx 𝕊) (T : Ty 𝕋) → PathP (λ i → Tm-≡ Γ T i
+             → DepPoly ⌈ Γ ⌉ (𝕋 // T)) (⇑ P) (⇑ M))
+      → (P ≡ M)
+  DepPoly-≡-intro Tm-≡ ⇑-≡ i .Tm Γ T = Tm-≡ Γ T i
+  DepPoly-≡-intro Tm-≡ ⇑-≡ i .⇑ {Γ} {T} t = ⇑-≡ Γ T i t
 
-  -}
 
   data Subst {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Ctx 𝕊 → Ctx 𝕋 → Type where
     ● : (Γ : Ctx 𝕊) → Subst M Γ ϵ
