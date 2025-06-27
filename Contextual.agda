@@ -1,5 +1,7 @@
 
 open import Cubical.Foundations.Prelude 
+open import Cubical.Functions.Embedding
+
 open import Cubical.Data.Nat.Base
 open import Cubical.Data.List renaming (length to len)
 open import Cubical.Data.Sigma
@@ -49,6 +51,13 @@ module Contextual where
     FibrantSlice {Ctxt = Ctxt} {T = T} {CwF = CwF} C {Γ = Γ} Ty₁ .⋆IdR = (SliceCat Ctxt (CwFH.cextOb CwF Γ Ty₁)).⋆IdR
     FibrantSlice {Ctxt = Ctxt} {T = T} {CwF = CwF} C {Γ = Γ} Ty₁ .⋆Assoc = (SliceCat Ctxt (CwFH.cextOb CwF Γ Ty₁)).⋆Assoc
     FibrantSlice {Ctxt = Ctxt} {T = T} {CwF = CwF} C {Γ = Γ} Ty₁ .isSetHom = (SliceCat Ctxt (CwFH.cextOb CwF Γ Ty₁)).isSetHom
+
+    FibrantSliceToBase :  {ℓ : Level} {Ctxt : Category ℓ ℓ} {T : TCategory Ctxt} {CwF : CwFH Ctxt T} (C : Contextual CwF) 
+            → {Γ : Ctxt .ob} → (Ty : CwFH.TyP CwF Γ) → (Functor (FibrantSlice C Ty) Ctxt)
+    FibrantSliceToBase C Ty₁ .Functor.F-ob (fst₁ , x) = S-ob fst₁
+    FibrantSliceToBase C Ty₁ .Functor.F-hom x = S-hom x
+    FibrantSliceToBase C Ty₁ .Functor.F-id = refl
+    FibrantSliceToBase C Ty₁ .Functor.F-seq f g = refl
 
     -- Σ (SliceCat Ctxt (CwFH.cextOb CwF Γ Ty₁) .ob) (λ x → (Σ (CwFH.TyP CwF (CwFH.cextOb CwF Γ Ty₁)) 
     --            (λ y → (Σ ((S-ob x) ≡ (CwFH.cextOb CwF (CwFH.cextOb CwF Γ Ty₁) y)) (λ z → (S-arr x) ≡ (CwFH.cextHom1 CwF y))))))

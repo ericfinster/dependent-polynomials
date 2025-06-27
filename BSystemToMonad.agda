@@ -92,116 +92,46 @@ module BSystemToMonad where
             TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) Γ)
             (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T')
         ∎
-       
-    EqTest⇑ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T))) (T' : (TyTmStr.Typ (TyTmStr.Slc B T)))
-        → PathP (λ i → (EqTestTM BS T Γ T' i) → DepPoly ⌈ Γ ⌉ (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
-            (DepPoly.⇑ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))) 
-            (DepPoly.⇑ (BSystemToDepPoly (BSystem.BSlc BS T))) 
-    EqTest⇑ BS T Γ T' i x .Tm x₁ x₂ = {! DepPoly.⇑ (BSystemToDepPoly (BSystem.BSlc BS T)) x  !}
-    EqTest⇑ BS T Γ T' i x .⇑ t = {!   !}
 
-    -- PathP (λ i → (EqTestTM BS T Γ T' i) → DepPoly ⌈ Γ ⌉ (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-    -- (DepPoly.⇑ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))))
-
-{-
-    -- This needs to be a PathP itself
-    EqTest⇑ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (T' T'' : (TyTmStr.Typ (TyTmStr.Slc B T)))
-        (t : (DepPoly.Tm ((BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))) (T' ► ϵ) T''))
-        → (DepPoly.⇑ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))) {T' ► ϵ} {T''} t
-            ≡ DepPoly.⇑ (BSystemToDepPoly (BSystem.BSlc BS T)) {T' ► ϵ} (Iso.fun (pathToIso (EqTestTM BS T T' T'')) t))
-    EqTest⇑ {B} {Bᵇ} BS T T' T'' t = {! 
-            DepPoly.⇑ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))) {T' ► ϵ} {T''} t
+    EqTest5 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T)))
+                (T' : TyTmStr.Typ (TyTmStr.Slc B T)) (t : (TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T')))
+            → (PreBSystem.sub (CtxToPreSys (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T') t
+            ○ (_↝_.Slc↝ (TerminalProj (BSystem.BSlc BS T) Γ) T' ○ idStr (TyTmStr.Slc (TyTmStr.Slc B T) T')))
+            ≡ (NeededSubst (BSystem.BSlc BS T) Γ T' t)
+    EqTest5 {B} {Bᵇ} BS T Γ T' t = (PreBSystem.sub (CtxToPreSys (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T') t
+            ○ (_↝_.Slc↝ (TerminalProj (BSystem.BSlc BS T) Γ) T' ○ idStr (TyTmStr.Slc (TyTmStr.Slc B T) T')))
+        ≡⟨ cong (λ x → (PreBSystem.sub (CtxToPreSys (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T') t ○ x))
+            (IdStrRN (_↝_.Slc↝ (TerminalProj (BSystem.BSlc BS T) Γ) T')) ⟩
+            (PreBSystem.sub (CtxToPreSys (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T') t
+            ○ (_↝_.Slc↝ (TerminalProj (BSystem.BSlc BS T) Γ) T'))
         ≡⟨ refl ⟩
-            transport
-            (λ i →
-            DepPoly (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-            (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T)
-            (T' ► ϵ) T''
-            (PreBSystem.sub (PreBSystem.slc (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            t
-            ○
-            ((idStr
-            (TyTmStr.Slc (TyTmStr.Slc (TyTmStr.Slc B T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T'')))
-            ○
-            _↝_.Slc↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            ○ _↝_.Slc↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T'')))
-        ≡⟨ cong (λ x → transport
-            (λ i →
-            DepPoly (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-            (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T)
-            (T' ► ϵ) T''
-            (PreBSystem.sub (PreBSystem.slc (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            t
-            ○ x))) (IdStrLN ((_↝_.Slc↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            ○ _↝_.Slc↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T'')) ⟩ -- can be done using idLN
-            transport
-            (λ i →
-            DepPoly (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-            (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T)
-            (T' ► ϵ) T''
-            (PreBSystem.sub (PreBSystem.slc (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            t
-            ○
-            ((_↝_.Slc↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T''))
-            ○ _↝_.Slc↝ (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)) T'')))
-        ≡⟨ ? ⟩
-            transport
-            (λ i →
-            DepPoly (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-            (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T)
-            (T' ► ϵ) T''
-            (PreBSystem.sub (PreBSystem.slc (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (idStr (TyTmStr.Slc B T)) T''))
-            (Iso.fun (pathToIso (EqTestTM BS T T' T'')) t)
-            ○
-            ((_↝_.Slc↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (idStr (TyTmStr.Slc B T)) T''))
-            ○ _↝_.Slc↝ (idStr (TyTmStr.Slc B T)) T'')))
-        ≡⟨ ? ⟩
-            transport
-            (λ i →
-            DepPoly (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))
-            (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T)
-            (T' ► ϵ) T''
-            (PreBSystem.sub (PreBSystem.slc (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (idStr (TyTmStr.Slc B T)) T''))
-            (Iso.fun (pathToIso (EqTestTM BS T T' T'')) t)
-            ○
-            ((idStr
-            (TyTmStr.Slc (TyTmStr.Slc (TyTmStr.Slc B T) T')
-            (_↝_.Ty↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (idStr (TyTmStr.Slc B T)) T'')))
-            ○
-            _↝_.Slc↝ (PreBSystem.wk (PreBSystem.slc Bᵇ T) T')
-            (_↝_.Ty↝ (idStr (TyTmStr.Slc B T)) T''))
-            ○ _↝_.Slc↝ (idStr (TyTmStr.Slc B T)) T'')))
-            ∎
-           !} -- looking at the goal type this should work by using that IdStr is neutal and using EqTestSub
-  
--} 
+            (NeededSubst (BSystem.BSlc BS T) Γ T' t)
+        ∎
+
+    EqTest2 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
+            → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
+                ≡ BSystemToDepPoly (BSystem.BSlc BS T)
+    EqTest2 BS T i .Tm x x₁ = refl {x = TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) x) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) x) x₁)} i
+    EqTest2 BS T i .⇑ {Γ} {T'} t = cong (λ x → transport (λ i₁ →
+            DepPoly (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ (~ i₁)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T) Γ T' x)) (EqTest5 BS T Γ T' t ) i
+
+    EqTest4 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
+            → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
+                ≡ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
+    EqTest4 BS T = cong (λ x → BSystemToDepPolyHelp BS BS (T ► ϵ) T x) (EqSub BS T) 
 
     EqTest : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
-            → ((BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))))
+            → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
                 ≡ BSystemToDepPoly (BSystem.BSlc BS T)
-    EqTest BS T = DepPoly-≡-intro (EqTestTM BS T) (EqTest⇑ BS T) 
+    EqTest {B} {Bᵇ} BS T = (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
+        ≡⟨ EqTest4 BS T ⟩
+            (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
+        ≡⟨ EqTest2 BS T ⟩      
+            BSystemToDepPoly (BSystem.BSlc BS T)
+        ∎
+            
+        -- DepPoly-≡-intro (EqTestTM BS T) (EqTest⇑ BS T) 
 
     Eq-η : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
         → IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒
@@ -220,14 +150,8 @@ module BSystemToMonad where
     BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (Iso.fun (pathToIso (sym (Eq-η BS T))))     
          (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
     
-    -- (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T))) 
- -- transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)) 
- -- should work for eta, but there is a constant transport in the goal type confusing me
-    
 
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
     BSystemToMonad BS .Monad.P = BSystemToDepPoly BS
     BSystemToMonad BS .Monad.μ = {!   !}
     BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = BSystemToMonad-η BS
-
-     -- _↝_.Tm↝ (TerminalProj BS Γ) T snd₁
