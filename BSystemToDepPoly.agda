@@ -8,6 +8,8 @@ open import BSystems
 
 module BSystemToDepPoly where
 
+    {-# BUILTIN REWRITE _≡_ #-}
+
     BSystemToTyStr : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → TyStr
     BSystemToTyStr {B} BS .Ty = TyTmStr.Typ B
     BSystemToTyStr {B} BS // x = BSystemToTyStr (BSystem.BSlc BS x)
@@ -41,6 +43,7 @@ module BSystemToDepPoly where
             → ⌈ Γ ⌉ ≡ (BSystemToTyStr (CtxToBSys BS Γ))
     ⌈_⌉BSysEqual BS ϵ = refl
     ⌈_⌉BSysEqual BS (T₁ ► Γ) = ⌈_⌉BSysEqual (BSystem.BSlc BS T₁) Γ
+    {-# REWRITE ⌈_⌉BSysEqual #-}
 
     EqHelp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ' : Ctx (BSystemToTyStr BS))
             → Γ' ≡ (transport (λ i → Ctx (BSystemToTyStr BS)) Γ')
@@ -100,15 +103,11 @@ module BSystemToDepPoly where
                 → (DepPoly (BSystemToTyStr (CtxToBSys AS Γ)) (BSystemToTyStr (BSystem.BSlc BS T)))
     BSystemToDepPolyHelp AS BS Γ T f .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) 
         x) (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x ○ f) x₁)
-    BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ T f .⇑ {x} {T'} t = transport (λ i → DepPoly (⌈_⌉BSysEqual (CtxToBSys AS Γ) x (~ i)) 
-        (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
-        (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
-        ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) x) 
-        (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x)
-        (_↝_.Ty↝ f T')) t)
-        ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T')))
+    BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ T f .⇑ {x} {T'} t = (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
+        (NeededSubstGen (CtxToBSys AS Γ) (BSystem.BSlc BS T) x ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T' t))
+
     
     BSystemToDepPoly : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (DepPoly (BSystemToTyStr BS) (BSystemToTyStr BS))
     BSystemToDepPoly BS .Tm Γ x₁ = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) x₁)
-    BSystemToDepPoly BS .⇑ {Γ} {T} t = transport (λ i → (DepPoly (⌈_⌉BSysEqual BS Γ (~ i)) (BSystemToTyStr (BSystem.BSlc BS T)))) (BSystemToDepPolyHelp BS BS Γ T (NeededSubst BS Γ T t))
+    BSystemToDepPoly BS .⇑ {Γ} {T} t = (BSystemToDepPolyHelp BS BS Γ T (NeededSubst BS Γ T t))
     
