@@ -36,6 +36,7 @@ module BSystemToDepPoly where
     CtxSliceBSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) → (Ctx (BSystemToTyStr (BSystem.BSlc BS T)))
     CtxSliceBSys {Bᵇ = Bᵇ} BS Γ T = NewCtx BS (BSystem.BSlc BS T) Γ (PreBSystem.wk Bᵇ T)
 
+        -- maybe I want to use Rewrite here, to save me a lot of transports in my code
     ⌈_⌉BSysEqual : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
             → ⌈ Γ ⌉ ≡ (BSystemToTyStr (CtxToBSys BS Γ))
     ⌈_⌉BSysEqual BS ϵ = refl
@@ -57,11 +58,21 @@ module BSystemToDepPoly where
 
 {-
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
-            → transport (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) ≡
-                (TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ)
-    TerminalProjComp BS ϵ Γ' = {!   !}
-    TerminalProjComp BS (T ► Γ) Γ' = {! TerminalProjComp (BSystem.BSlc BS T) Γ Γ'  !}
+            → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
+            ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
+    TerminalProjComp BS ϵ Γ' = {!  (toPathP (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ')))))  !} -- here I need to compose PathPs and cast paths to PathP
+    TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = {!  congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')  !} -- this needs associativity of composition
 -}
+    -- TerminalProjComp (BSystem.BSlc BS T) Γ Γ'
+    
+    -- (PathP (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ'))
+         --       (TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
+
+    --        ≡⟨ sym (IdStrRN  (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ'))) ⟩
+           --     (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ') ○ idStr B) 
+
+        -- cong (λ x → TerminalProj BS x) (EqHelp BS Γ')
+
     -- transport (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) ≡
 
 
@@ -70,41 +81,15 @@ module BSystemToDepPoly where
     EqStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
             → ⌈ (CtxSliceBSys BS Γ T) ⌉ ≡ ⌈ (DropCtx BS T (CtxSliceBSys BS Γ T)) ⌉
     EqStep BS Γ T = refl
-{-
-    ActualEq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
-            → ⌈ Γ ⌉ ≡ ⌈ (CtxSliceBSys BS Γ T) ⌉
-    ActualEq {B} {Bᵇ} BS ϵ T t = {!   !} -- filling this hole is impossible for an arbitrary BSystem, otherwise they would all be stationary
-    ActualEq {B} {Bᵇ} BS (T₁ ► Γ) T t = {!   !}
--}
-    -- the fact that the equality above is impossible tells us that CtxSliceBSys is the wrong context
-
-
-    postulate
-        -- doesn't exist
-        NeededEqSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
-                → ⌈ Γ ⌉ ≡ ⌈ (CtxSliceBSys BS Γ T) ⌉ 
-
-    NeededSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
-                → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
-    NeededSubst BS Γ T t = (PreBSystem.sub (CtxToPreSys BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T) t) ○ _↝_.Slc↝ (TerminalProj BS Γ) T
 
     NeededSubstGen : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T))
             → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ))
     NeededSubstGen AS BS Γ f T t = (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (_↝_.Slc↝ f T)
-{-
-        -- this is enough because of ⌈_⌉BSysEqual
-    MorphismFix : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
-                → (P : (DepPoly (BSystemToTyStr (BSystem.BSlc BS T)) (BSystemToTyStr (BSystem.BSlc BS T))))
-                → ((DepPoly (BSystemToTyStr (CtxToBSys BS Γ)) (BSystemToTyStr (BSystem.BSlc BS T))))
-    MorphismFix BS Γ T f P .Tm x x₁ = {! NeededSubst BS Γ T t  !}
-    MorphismFix BS Γ T f P .⇑ {x} {T'} t = {!    !}
--}
 
-        -- TerminalProj (CtxToBSys BS Γ) x 
-        -- transport (λ i → (DepPoly (⌈ _⌉BSysEqual (CtxToBSys BS Γ) x (~ i)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T'))))
-    -- (MorphismFix (CtxToBSys BS Γ) x (_↝_.Ty↝ (NeededSubst BS Γ T t) T') t₁)
-    -- _↝_.Ty↝ (NeededSubst BS Γ T t) x₁ 
+    NeededSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
+                → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
+    NeededSubst BS Γ T t = NeededSubstGen BS BS Γ (TerminalProj BS Γ) T t
     
 
     -- If I have time I could turn the function used in the lift into a seperate agda function for readablity

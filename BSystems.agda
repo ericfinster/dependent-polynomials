@@ -73,6 +73,13 @@ module BSystems where
   (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
   (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T) 
 
+  {-# TERMINATING #-}
+  ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
+      → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
+  ○-assoc f g h i .Ty↝ x = (Ty↝ f (Ty↝ g (Ty↝ h x)))
+  ○-assoc f g h i .Tm↝ T x = Tm↝ f (Ty↝ g (Ty↝ h T)) (Tm↝ g (Ty↝ h T) (Tm↝ h T x))
+  ○-assoc f g h i .Slc↝ T = ○-assoc (Slc↝ f (Ty↝ g (Ty↝ h T))) (Slc↝ g (Ty↝ h T)) (Slc↝ h T) i 
+
 
   {-# TERMINATING #-}
   IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
