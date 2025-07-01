@@ -1,6 +1,9 @@
 
 
-open import Cubical.Foundations.Prelude 
+open import Cubical.Foundations.Prelude
+
+open import Cubical.Foundations.Isomorphism
+open import Cubical.Foundations.Transport
 
 module BSystems where
 
@@ -12,6 +15,12 @@ module BSystems where
       Slc : Typ → TyTmStr -- this is ft^-1
 
   open TyTmStr
+
+  proj-Typ : (A B : TyTmStr) (ɣ : A ≡ B) → (Typ A ≡ (Typ B))
+  proj-Typ A B ɣ i = Typ (ɣ i)
+
+  proj-Slc : (A B : TyTmStr) (ɣ : A ≡ B) (T : Typ A) (T' : Typ B) (ɣ' : (PathP (λ i → (Typ (ɣ i))) T T')) → (Slc A T) ≡ (Slc B T')
+  proj-Slc A B ɣ T T' ɣ' i = Slc (ɣ i) (ɣ' i)
   
   record _↝_ (A B : TyTmStr) : Type where
     coinductive
@@ -31,22 +40,30 @@ module BSystems where
   proj-slc : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty f g p T i))) (Slc↝ f T) (Slc↝ g T)
   proj-slc f g p T i = Slc↝ (p i) T
 
-  -- record ↝-bi-sim {A B : TyTmStr} (f g : A ↝ B) : Type where
-  --   coinductive
-  --   field
-  --     Ty-eq : (Ty↝ f) ≡ (Ty↝ g)
-  --     Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t)
-  --     Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) {!Slc↝ g T!}
+  record ↝-bi-sim {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) : Type where
+     coinductive
+     field
+       Ty-eq : (T : Typ A) → (PathP (λ i → (Typ (ɣ i))) (Ty↝ f T) (Ty↝ g T))
+       Tm-eq : (T : Typ A) (t : Tm A T)  → PathP (λ i → Tm (ɣ i) (Ty-eq T i)) (Tm↝ f T t) (Tm↝ g T t)
+       Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq T))
 
   --  -- PathP (λ i → (Slc A T) ↝ (Slc B (Ty-eq i T))) (Slc↝ f T) (Slc↝ g T)
+  -- ↝-bi-sim (Slc↝ f T) (Slc↝ g T)
+  -- proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T)
+  -- (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t)
 
-  -- open ↝-bi-sim
+  open ↝-bi-sim
 
-  -- ↝-≡-intro : {A B : TyTmStr} (f g : A ↝ B) (β : ↝-bi-sim f g) → f ≡ g 
-  -- ↝-≡-intro f g β i .Ty↝ = Ty-eq β i 
-  -- ↝-≡-intro f g β i .Tm↝ T' t = Tm-eq β T' t i 
-  -- ↝-≡-intro f g β i .Slc↝ T' = {!!} -- Slc-eq β T' i 
+  ↝-≡-intro : {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) (β : ↝-bi-sim f g ɣ) → (PathP (λ i → (A ↝ (ɣ i))) f g) 
+  ↝-≡-intro f g ɣ β i .Ty↝ T = Ty-eq β T i
+  ↝-≡-intro f g ɣ β i .Tm↝ T t = Tm-eq β T t i
+  ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β T)) (Slc-eq β T) i 
 
+
+  -- ↝-≡-intro (Slc↝ f T) (Slc↝ g T)
+  -- (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β _ T)) (Slc-eq β T) i
+  -- (Slc-eq β T')
+  -- ↝-≡-intro (Slc↝ f T) (Slc↝ g T)
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
     field
@@ -87,10 +104,21 @@ module BSystems where
   ○-assoc f g h i .Tm↝ T x = Tm↝ f (Ty↝ g (Ty↝ h T)) (Tm↝ g (Ty↝ h T) (Tm↝ h T x))
   ○-assoc f g h i .Slc↝ T = ○-assoc (Slc↝ f (Ty↝ g (Ty↝ h T))) (Slc↝ g (Ty↝ h T)) (Slc↝ h T) i 
 
-  -- IdStrLN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim ((idStr B) ○ f) f
-  -- IdStrLN-bi-sim {A} {B} f .Ty-eq = refl
-  -- IdStrLN-bi-sim {A} {B} f .Tm-eq T t = refl
-  -- IdStrLN-bi-sim {A} {B} f .Slc-eq T = {!!}
+  IdStrLN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim ((idStr B) ○ f) f refl
+  IdStrLN-bi-sim f .Ty-eq T = refl
+  IdStrLN-bi-sim f .Tm-eq T t = refl
+  IdStrLN-bi-sim f .Slc-eq T = IdStrLN-bi-sim (Slc↝ f T)
+
+  IdStrRN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim (f ○ (idStr A)) f refl
+  IdStrRN-bi-sim f .Ty-eq T = refl
+  IdStrRN-bi-sim f .Tm-eq T t = refl
+  IdStrRN-bi-sim f .Slc-eq T = IdStrRN-bi-sim (Slc↝ f T)
+
+  IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
+  IdStrLN {B = B} f = ↝-≡-intro ((idStr B) ○ f) f refl (IdStrLN-bi-sim f)
+
+  IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
+  IdStrRN {A} f = ↝-≡-intro (f ○ (idStr A)) f refl (IdStrRN-bi-sim f)
 
   -- {-# TERMINATING #-}
   -- IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
