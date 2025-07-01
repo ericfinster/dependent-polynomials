@@ -63,23 +63,10 @@ module BSystemToDepPoly where
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
             ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
-    TerminalProjComp BS ϵ Γ' = {!  (toPathP (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ'))))) !} -- here I need to compose PathPs and cast paths to PathP
-    TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = {!  congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')  !} -- this needs associativity of composition
-
-    -- TerminalProjComp (BSystem.BSlc BS T) Γ Γ'
-    
-    -- (PathP (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ'))
-         --       (TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
-
-    --        ≡⟨ sym (IdStrRN  (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ'))) ⟩
-           --     (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ') ○ idStr B) 
-
-        -- cong (λ x → TerminalProj BS x) (EqHelp BS Γ')
-
-    -- transport (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) ≡
-
-
-    -- cong (λ x → (CtxToTyTmStr BS x)) (++-unit-left Γ)
+    TerminalProjComp BS ϵ Γ' = cong (λ x → TerminalProj BS x) (EqHelp BS Γ') ▷ (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ')))) 
+    TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = (congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')) 
+                ▷ (○-assoc (TerminalProj (CtxToBSys (BSystem.BSlc BS T) Γ) (transport (λ i → Ctx (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ i)) Γ')) 
+                (TerminalProj (BSystem.BSlc BS T) Γ) (PreBSystem.wk Bᵇ T)) 
 
     EqStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
             → ⌈ (CtxSliceBSys BS Γ T) ⌉ ≡ ⌈ (DropCtx BS T (CtxSliceBSys BS Γ T)) ⌉
