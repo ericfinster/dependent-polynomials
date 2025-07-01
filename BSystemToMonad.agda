@@ -63,20 +63,21 @@ module BSystemToMonad where
 
     AppSubst2Eq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
         (Γ' : Ctx (BSystemToTyStr (CtxToBSys BS Γ))) (Δ' : Ctx (BSystemToTyStr (BSystem.BSlc BS T)))
-        → TyTmStr.Tm (CtxToTyTmStr BS (Γ ++ Γ')) (_↝_.Ty↝ (TerminalProj BS (Γ ++ Γ')) T)
-        ≡ TyTmStr.Tm (CtxToTyTmStr (CtxToBSys BS Γ) Γ') (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Γ) Γ') (_↝_.Ty↝ (TerminalProj BS Γ) T))
-    AppSubst2Eq BS Γ T Γ' Δ' = {! 
-            TyTmStr.Tm (CtxToTyTmStr BS (Γ ++ Γ')) (_↝_.Ty↝ (TerminalProj BS (Γ ++ Γ')) T)
-        ≡⟨ ? ⟩
-            TyTmStr.Tm (CtxToTyTmStr (CtxToBSys BS Γ) Γ') (_↝_.Ty↝ (TerminalProj BS (Γ ++ Γ')) T) 
-        ∎     !}
+        → PathP (λ i → {! TyTmStr.Tm (TyTmStr++Eq BS Γ Γ' i) ((_↝_.Ty↝ (TerminalProjComp BS Γ Γ' i)) T)  !}) {!   !} {!   !}
+
+    {-
+    (TyTmStr.Tm (CtxToTyTmStr BS (Γ ++ Γ')) (_↝_.Ty↝ (TerminalProj BS (Γ ++ Γ')) T))
+        (TyTmStr.Tm (CtxToTyTmStr (CtxToBSys BS Γ) Γ') (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Γ) Γ') (_↝_.Ty↝ (TerminalProj BS Γ) T)))
+    -}
+
+    -- TyTmStr.Tm (TyTmStr++Eq BS Γ Γ' i)
 
     AppSubst2 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
         (fst₁ : Ctx (BSystemToTyStr BS)) (fst₂ : Subst (BSystemToDepPoly BS) Γ fst₁) 
         (snd₁ : TyTmStr.Tm (CtxToTyTmStr BS fst₁) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
         → (TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
     AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (● .Γ) snd₁ = _↝_.Tm↝ (TerminalProj BS Γ) T snd₁
-    AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (cns Γ₁ T₁ t Γ' Δ' fst₂) snd₁ = {! AppSubst BS BS Γ₁ T₁ (TerminalProj BS Γ₁) Γ' Δ' t fst₂ !}
+    AppSubst2 {B} {Bᵇ} BS Γ T fst₁ (cns Γ₁ T₁ t Γ' Δ' fst₂) snd₁ = {! (AppSubst BS BS Γ₁ T₁ (TerminalProj BS Γ₁) Γ' Δ' t fst₂) !}
     
     -- AppSubst BS BS Γ₁ T₁ (TerminalProj BS Γ₁) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ₁ i)))) Γ') Δ' t 
     -- AppSubst (CtxToBSys BS Γ₁) BS ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ₁ i)))) Γ') T₁
@@ -204,4 +205,4 @@ module BSystemToMonad where
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
     BSystemToMonad BS .Monad.P = BSystemToDepPoly BS
     BSystemToMonad BS .Monad.μ = {!  BS !}
-    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = {!  BSystemToMonad-η BS !}
+    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = BSystemToMonad-η BS
