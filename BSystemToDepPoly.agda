@@ -59,13 +59,13 @@ module BSystemToDepPoly where
     TerminalProj {B} BS ϵ = idStr B
     TerminalProj {Bᵇ = Bᵇ} BS (T ► Γ) = (TerminalProj (BSystem.BSlc BS T) Γ) ○ (PreBSystem.wk Bᵇ T)
 
-{-
+
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
             ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
-    TerminalProjComp BS ϵ Γ' = {!  (toPathP (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ')))))  !} -- here I need to compose PathPs and cast paths to PathP
+    TerminalProjComp BS ϵ Γ' = {!  (toPathP (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ'))))) !} -- here I need to compose PathPs and cast paths to PathP
     TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = {!  congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')  !} -- this needs associativity of composition
--}
+
     -- TerminalProjComp (BSystem.BSlc BS T) Γ Γ'
     
     -- (PathP (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ'))

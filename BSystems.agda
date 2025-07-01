@@ -31,13 +31,21 @@ module BSystems where
   proj-slc : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty f g p T i))) (Slc↝ f T) (Slc↝ g T)
   proj-slc f g p T i = Slc↝ (p i) T
 
+  -- record ↝-bi-sim {A B : TyTmStr} (f g : A ↝ B) : Type where
+  --   coinductive
+  --   field
+  --     Ty-eq : (Ty↝ f) ≡ (Ty↝ g)
+  --     Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t)
+  --     Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) {!Slc↝ g T!}
 
-  ↝-≡-intro : (A B : TyTmStr) (f g : A ↝ B) (Ty-eq : (Ty↝ f) ≡ (Ty↝ g)) (Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t))
-      → (Slc-eq : (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (Ty-eq i T))) (Slc↝ f T) (Slc↝ g T)) → (f ≡ g)
-  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Ty↝ = Ty-eq i
-  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Tm↝ T' t = Tm-eq T' t i
-  ↝-≡-intro A B f g Ty-eq Tm-eq Slc-eq i .Slc↝ T' = Slc-eq T' i 
-  
+  --  -- PathP (λ i → (Slc A T) ↝ (Slc B (Ty-eq i T))) (Slc↝ f T) (Slc↝ g T)
+
+  -- open ↝-bi-sim
+
+  -- ↝-≡-intro : {A B : TyTmStr} (f g : A ↝ B) (β : ↝-bi-sim f g) → f ≡ g 
+  -- ↝-≡-intro f g β i .Ty↝ = Ty-eq β i 
+  -- ↝-≡-intro f g β i .Tm↝ T' t = Tm-eq β T' t i 
+  -- ↝-≡-intro f g β i .Slc↝ T' = {!!} -- Slc-eq β T' i 
 
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
@@ -73,22 +81,20 @@ module BSystems where
   (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
   (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T) 
 
-  {-# TERMINATING #-}
   ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
       → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
   ○-assoc f g h i .Ty↝ x = (Ty↝ f (Ty↝ g (Ty↝ h x)))
   ○-assoc f g h i .Tm↝ T x = Tm↝ f (Ty↝ g (Ty↝ h T)) (Tm↝ g (Ty↝ h T) (Tm↝ h T x))
   ○-assoc f g h i .Slc↝ T = ○-assoc (Slc↝ f (Ty↝ g (Ty↝ h T))) (Slc↝ g (Ty↝ h T)) (Slc↝ h T) i 
 
+  -- IdStrLN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim ((idStr B) ○ f) f
+  -- IdStrLN-bi-sim {A} {B} f .Ty-eq = refl
+  -- IdStrLN-bi-sim {A} {B} f .Tm-eq T t = refl
+  -- IdStrLN-bi-sim {A} {B} f .Slc-eq T = {!!}
 
-  {-# TERMINATING #-}
-  IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
-  IdStrLN {A} {B} f = ↝-≡-intro A B ((idStr B) ○ f) f refl (λ T t → refl) (λ T → IdStrLN (Slc↝ f T))
-
-  {-# TERMINATING #-}
-  IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
-  IdStrRN {A} {B} f = ↝-≡-intro A B (f ○ (idStr A)) f refl (λ T t → refl) (λ T → IdStrRN (Slc↝ f T))
-
+  -- {-# TERMINATING #-}
+  -- IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
+  -- IdStrRN {A} {B} f = ↝-≡-intro A B (f ○ (idStr A)) f refl (λ T t → refl) (λ T → IdStrRN (Slc↝ f T))
   
   record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
     coinductive
