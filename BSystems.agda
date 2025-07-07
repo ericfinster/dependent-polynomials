@@ -210,13 +210,27 @@ module BSystems where
 
 
   -- Eric's substitution setup
-  data Subst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
-    ϵ : Subst Bᵇ ε
+  data BSubst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
+    ϵ : BSubst Bᵇ ε
     _►_ : {T : Typ B} {Γ : Ctxt (Slc B T)}
           → (t : Tm B T)
-          → Subst (slc Bᵇ T) Γ 
-          → Subst Bᵇ (T ⊳ Γ)
+          → BSubst (slc Bᵇ T) Γ 
+          → BSubst Bᵇ (T ⊳ Γ)
     
-  ApplySubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : Subst Bᵇ Γ) → TopTyTm Γ ↝ B 
+  ApplySubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : BSubst Bᵇ Γ) → TopTyTm Γ ↝ B 
   ApplySubst {B} Bᵇ Γ ϵ = idStr B
   ApplySubst {B} Bᵇ _ (_►_ {T} {Γ} t σ) = sub Bᵇ T t ○ ApplySubst (slc Bᵇ T) Γ σ
+
+  -- These should compose ....
+  CtxSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) → Ctxt B → Ctxt B → Type
+  CtxSubst Bᵇ Γ Δ = BSubst (TopPre Bᵇ Γ) (AppCtxt Δ (wkCtxt Bᵇ Γ)) 
+
+  -- wkCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (B ↝ (TopTyTm Γ))
+  -- wkCtxt {B} Bᵇ ε = idStr B
+  -- wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
+
+  -- AppCtxt : {B : TyTmStr} {A : TyTmStr} (Γ : Ctxt A) (f : A ↝ B) → (Ctxt B)
+  -- AppCtxt ε f = ε
+  -- AppCtxt (T ⊳ Γ) f = (Ty↝ f T) ⊳ (AppCtxt Γ (Slc↝ f T))
+
+

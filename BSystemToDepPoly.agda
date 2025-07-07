@@ -147,3 +147,12 @@ module BSystemToDepPoly where
     ListToSubst {B} {Bᵇ} BS Γ (cnsTy T Γ' L) = {!   !}
     ListToSubst {B} {Bᵇ} BS Γ (cnsTm T t Γ' L) = {!   !}
  -}   
+
+    postulate
+   
+      BSystemToSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)
+        → (Γ Δ : Ctxt B)
+        → (CtxSubst Bᵇ Γ Δ) ≡ Subst (BSystemToDepPoly BS) (CtxBToCtxP BS Γ) (CtxBToCtxP BS Δ) 
+
+
+
