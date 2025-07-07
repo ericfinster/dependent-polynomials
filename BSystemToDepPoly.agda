@@ -14,6 +14,26 @@ module BSystemToDepPoly where
     BSystemToTyStr {B} BS .Ty = TyTmStr.Typ B
     BSystemToTyStr {B} BS // x = BSystemToTyStr (BSystem.BSlc BS x)
 
+    -- -- -- Converting Contexts
+
+    CtxPToCtxB : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → (Ctxt B)
+    CtxPToCtxB BS ϵ = ε
+    CtxPToCtxB BS (T ► Γ) = T ⊳ (CtxPToCtxB (BSystem.BSlc BS T) Γ)
+
+    CtxBToCtxP : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) → (Ctx (BSystemToTyStr BS))
+    CtxBToCtxP BS ε = ϵ
+    CtxBToCtxP BS (T ⊳ Γ) = T ► (CtxBToCtxP (BSystem.BSlc BS T) Γ)
+
+    rInv : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) → (CtxPToCtxB BS (CtxBToCtxP BS Γ)) ≡ Γ
+    rInv BS ε = refl
+    rInv BS (T ⊳ Γ) = cong (λ x → T ⊳ x) (rInv (BSystem.BSlc BS T) Γ)
+
+    lInv : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → (CtxBToCtxP BS (CtxPToCtxB BS Γ)) ≡ Γ
+    lInv BS ϵ = refl
+    lInv BS (T ► Γ) = cong (λ x → T ► x) (lInv (BSystem.BSlc BS T) Γ)
+
+    -- -- --
+
     CtxToTyTmStr : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → (TyTmStr)
     CtxToTyTmStr {B} BS ϵ = B
     CtxToTyTmStr BS (T ► Γ) = CtxToTyTmStr (BSystem.BSlc BS T) Γ
@@ -51,9 +71,13 @@ module BSystemToDepPoly where
 
     -- maybe needed for BSystemToMonad
     TyTmStr++Eq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
-            → (CtxToTyTmStr BS (Γ ++ Γ')) ≡ (CtxToTyTmStr (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ'))
-    TyTmStr++Eq BS ϵ Γ' = cong (λ x → CtxToTyTmStr BS x) (EqHelp BS Γ')
+            → (CtxToTyTmStr BS (Γ ++ Γ')) ≡ (CtxToTyTmStr (CtxToBSys BS Γ) Γ')
+    TyTmStr++Eq BS ϵ Γ' = refl
     TyTmStr++Eq BS (T ► Γ) Γ' = TyTmStr++Eq (BSystem.BSlc BS T) Γ Γ'
+
+-- These are the solutions without the rewrite
+-- cong (λ x → CtxToTyTmStr BS x) (EqHelp BS Γ')
+-- TyTmStr++Eq (BSystem.BSlc BS T) Γ Γ'
 
     TerminalProj : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → B ↝ (CtxToTyTmStr BS Γ)
     TerminalProj {B} BS ϵ = idStr B
@@ -62,11 +86,23 @@ module BSystemToDepPoly where
 
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
-            ((TerminalProj (CtxToBSys BS Γ) ((transport (λ i → (Ctx (⌈_⌉BSysEqual BS Γ i)))) Γ')) ○ (TerminalProj BS Γ))
-    TerminalProjComp BS ϵ Γ' = cong (λ x → TerminalProj BS x) (EqHelp BS Γ') ▷ (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ')))) 
-    TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = (congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')) 
+            ((TerminalProj (CtxToBSys BS Γ) Γ') ○ (TerminalProj BS Γ))
+    TerminalProjComp BS ϵ Γ' = sym (IdStrRN (TerminalProj BS Γ'))
+    TerminalProjComp {Bᵇ = Bᵇ} BS (T ► Γ) Γ' = congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ') 
+                ▷ (○-assoc (TerminalProj (CtxToBSys (BSystem.BSlc BS T) Γ) Γ') 
+                (TerminalProj (BSystem.BSlc BS T) Γ) (PreBSystem.wk Bᵇ T))
+
+
+        -- again the solutions without rewrite
+        {-
+        cong (λ x → TerminalProj BS x) (EqHelp BS Γ') ▷ (sym (IdStrRN (TerminalProj BS (transport (λ i → Ctx (BSystemToTyStr BS)) Γ'))))
+        -}
+        {-
+        (congP (λ i → (λ x → x ○ (PreBSystem.wk Bᵇ T))) (TerminalProjComp (BSystem.BSlc BS T) Γ Γ')) 
                 ▷ (○-assoc (TerminalProj (CtxToBSys (BSystem.BSlc BS T) Γ) (transport (λ i → Ctx (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ i)) Γ')) 
-                (TerminalProj (BSystem.BSlc BS T) Γ) (PreBSystem.wk Bᵇ T)) 
+                (TerminalProj (BSystem.BSlc BS T) Γ) (PreBSystem.wk Bᵇ T))
+        -}
+
 
     EqStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B)
             → ⌈ (CtxSliceBSys BS Γ T) ⌉ ≡ ⌈ (DropCtx BS T (CtxSliceBSys BS Γ T)) ⌉
@@ -82,7 +118,6 @@ module BSystemToDepPoly where
     NeededSubst BS Γ T t = NeededSubstGen BS BS Γ (TerminalProj BS Γ) T t
     
 
-    -- If I have time I could turn the function used in the lift into a seperate agda function for readablity
     {-# TERMINATING #-}
     BSystemToDepPolyHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
                 (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
@@ -95,6 +130,20 @@ module BSystemToDepPoly where
 
     
     BSystemToDepPoly : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (DepPoly (BSystemToTyStr BS) (BSystemToTyStr BS))
-    BSystemToDepPoly BS .Tm Γ x₁ = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) x₁)
+    BSystemToDepPoly BS .Tm Γ T = TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T)
     BSystemToDepPoly BS .⇑ {Γ} {T} t = (BSystemToDepPolyHelp BS BS Γ T (NeededSubst BS Γ T t))
-    
+{-
+    -- -- -- Converting Substitutions
+
+    SubstToList : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                (Δ : Ctx (BSystemToTyStr BS)) (ɣ : Subst (BSystemToDepPoly BS) Γ Δ) 
+                → (ListOfTerms Bᵇ (CtxPToCtxB BS Γ))
+    SubstToList BS Γ Δ (● .Γ) = {!   !}
+    SubstToList BS Γ Δ (cns Γ₁ T t Γ' Δ' ɣ) = {!   !}
+
+    ListToSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) 
+                → (Subst (BSystemToDepPoly BS) (CtxBToCtxP BS Γ) (CtxBToCtxP BS (SubstCtxt Bᵇ Γ L)))
+    ListToSubst {B} {Bᵇ} BS Γ e = ● ϵ
+    ListToSubst {B} {Bᵇ} BS Γ (cnsTy T Γ' L) = {!   !}
+    ListToSubst {B} {Bᵇ} BS Γ (cnsTm T t Γ' L) = {!   !}
+ -}   
