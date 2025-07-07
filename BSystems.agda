@@ -165,13 +165,13 @@ module BSystems where
       → (Tm (TopTyTm (SubCtxt Bᵇ T' t Γ')) (SubCtxtTyStep Bᵇ T' t Γ' T))
   SubCtxtTmStep Bᵇ T' t Γ' T t' = Tm↝ (SlcHomCtxt (slc Bᵇ T') Bᵇ Γ' (sub Bᵇ T' t)) T t'
 
-  {-# TERMINATING #-}
-  SubstFun : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → ((TopTyTm Γ) ↝ (TopTyTm (SubstCtxt Bᵇ Γ L)))
-  SubstFun {B} Bᵇ Γ e = idStr B
-  SubstFun Bᵇ Γ (cnsTy T Γ' L) = SubstFun (slc Bᵇ T) Γ' L
-  SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Ty↝ T' = Ty↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T')
-  SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Tm↝ T' t' = Tm↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T') (SubCtxtTmStep Bᵇ T t Γ' T' t')
-  SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {!    !}
+  -- {-# TERMINATING #-}
+  -- SubstFun : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → ((TopTyTm Γ) ↝ (TopTyTm (SubstCtxt Bᵇ Γ L)))
+  -- SubstFun {B} Bᵇ Γ e = idStr B
+  -- SubstFun Bᵇ Γ (cnsTy T Γ' L) = SubstFun (slc Bᵇ T) Γ' L
+  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Ty↝ T' = Ty↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T')
+  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Tm↝ T' t' = Tm↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T') (SubCtxtTmStep Bᵇ T t Γ' T' t')
+  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {!    !}
 
   ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
       → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
@@ -209,3 +209,14 @@ module BSystems where
       BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
 
 
+  -- Eric's substitution setup
+  data Subst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
+    ϵ : Subst Bᵇ ε
+    _►_ : {T : Typ B} {Γ : Ctxt (Slc B T)}
+          → (t : Tm B T)
+          → Subst (slc Bᵇ T) Γ 
+          → Subst Bᵇ (T ⊳ Γ)
+    
+  ApplySubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : Subst Bᵇ Γ) → TopTyTm Γ ↝ B 
+  ApplySubst {B} Bᵇ Γ ϵ = idStr B
+  ApplySubst {B} Bᵇ _ (_►_ {T} {Γ} t σ) = sub Bᵇ T t ○ ApplySubst (slc Bᵇ T) Γ σ
