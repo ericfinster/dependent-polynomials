@@ -1,9 +1,10 @@
-
-
+{-# OPTIONS -WnoUnsupportedIndexedMatch #-} -- needed for consSubst
+ 
 open import Cubical.Foundations.Prelude
 
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Transport
+open import Cubical.Data.Empty
 
 module BSystems where
 
@@ -15,6 +16,11 @@ module BSystems where
       Slc : Typ → TyTmStr -- this is ft^-1
 
   open TyTmStr
+
+  emptyStr : TyTmStr
+  emptyStr .Typ = ⊥
+  emptyStr .Tm = rec
+  emptyStr .Slc = rec
 
   proj-Typ : (A B : TyTmStr) (ɣ : A ≡ B) → (Typ A ≡ (Typ B))
   proj-Typ A B ɣ i = Typ (ɣ i)
@@ -37,12 +43,10 @@ module BSystems where
   concat (T ⊳ Γ) Γ' = T ⊳ (concat Γ Γ')
 
   TypesInCtx : {B : TyTmStr} (Γ : Ctxt B) → Type
-  TypesInCtx {B} ε = Typ B
-  TypesInCtx (T ⊳ Γ) = TypesInCtx Γ
+  TypesInCtx Γ = Typ (TopTyTm Γ)
 
   TermsInCtx : {B : TyTmStr} (Γ : Ctxt B) → (T : (TypesInCtx Γ)) → Type
-  TermsInCtx {B} ε T = Tm B T
-  TermsInCtx (T₁ ⊳ Γ) T = TermsInCtx Γ T
+  TermsInCtx Γ T = Tm (TopTyTm Γ) T
 
   record _↝_ (A B : TyTmStr) : Type where
     coinductive
@@ -102,7 +106,8 @@ module BSystems where
       -- Does this need to be a PathP?
       wk≡Tm : (T : Typ A) → (t : Tm A T) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (Tm↝ (wk Aᵇ T) T t)) 
           ≡ transport (λ i → (Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i)))) (Tm↝ (wk Bᵇ (Ty↝ ϕ T)) (Ty↝ ϕ T) (Tm↝ ϕ T t)) 
-      sub≡Ty : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → Ty↝ ϕ (Ty↝ (sub Aᵇ T t) U) ≡ Ty↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U)
+      sub≡Ty : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → Ty↝ ϕ (Ty↝ (sub Aᵇ T t) U) 
+          ≡ Ty↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U)
       -- Does this need to be a PathP?
       sub≡Tm : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → (u : Tm (Slc A T) U) 
           → Tm↝ ϕ (Ty↝ (sub Aᵇ T t) U) (Tm↝ (sub Aᵇ T t) U u)
@@ -114,7 +119,12 @@ module BSystems where
   idStr : (A : TyTmStr) → (A ↝ A)
   idStr A .Ty↝ x = x
   idStr A .Tm↝ T x = x
-  idStr A .Slc↝ T = idStr (Slc A T)   
+  idStr A .Slc↝ T = idStr (Slc A T)  
+
+  EmptySubst : (B : TyTmStr) → emptyStr ↝ B
+  EmptySubst B .Ty↝ = rec
+  EmptySubst B .Tm↝ T x = rec T
+  EmptySubst B .Slc↝ T = rec T
 
   _○_ : {A B C : TyTmStr} → (f : B ↝ C) → (g : A ↝ B) → (A ↝ C)
   (f ○ g) .Ty↝ x = Ty↝ f (Ty↝ g x)
@@ -152,6 +162,10 @@ module BSystems where
   SubListOfTerms : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) (t : Tm B T) (Γ : Ctxt (Slc B T)) (L : ListOfTerms (slc Bᵇ T) Γ) → (ListOfTerms Bᵇ (SubCtxt Bᵇ T t Γ))
   SubListOfTerms Bᵇ T t Γ L = AppListOfTerms (slc Bᵇ T) Bᵇ Γ (sub Bᵇ T t) L
 
+  -- TerminalSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (ListOfTerms Bᵇ Γ)
+  -- TerminalSubst Bᵇ ε = e
+  -- TerminalSubst Bᵇ (T ⊳ Γ) = {! var Bᵇ T  !}
+
   {-# TERMINATING #-} -- this should hopefully be fixable but we leave it in here to test the idea
   SubstCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → (Ctxt B)
   SubstCtxt Bᵇ ε e = ε
@@ -165,13 +179,26 @@ module BSystems where
       → (Tm (TopTyTm (SubCtxt Bᵇ T' t Γ')) (SubCtxtTyStep Bᵇ T' t Γ' T))
   SubCtxtTmStep Bᵇ T' t Γ' T t' = Tm↝ (SlcHomCtxt (slc Bᵇ T') Bᵇ Γ' (sub Bᵇ T' t)) T t'
 
+  idSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (ListOfTerms Bᵇ Γ)
+  idSubst Bᵇ ε = e
+  idSubst Bᵇ (T ⊳ Γ) = cnsTy T Γ (idSubst (slc Bᵇ T) Γ)
+
+  -- this apparently only works in a non cubical setting since I'm using injectivity of constructors 
+  conSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : ListOfTerms Bᵇ Γ) (ɣ : ListOfTerms Bᵇ (SubstCtxt Bᵇ Γ σ)) → (ListOfTerms Bᵇ Γ)
+  conSubst Bᵇ Γ e ɣ = e
+  conSubst Bᵇ Γ (cnsTy T Γ' σ) (cnsTy .T .(SubstCtxt (slc Bᵇ T) Γ' σ) ɣ) = cnsTy T Γ' σ
+  conSubst Bᵇ Γ (cnsTy T Γ' σ) (cnsTm .T t .(SubstCtxt (slc Bᵇ T) Γ' σ) ɣ) = cnsTm T t Γ' σ
+  conSubst Bᵇ Γ (cnsTm T t Γ' σ) ɣ = cnsTm T t Γ' σ
+
+  -- one would probably need an equality between the target context of the composition and the original second target context
+
   -- {-# TERMINATING #-}
   -- SubstFun : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → ((TopTyTm Γ) ↝ (TopTyTm (SubstCtxt Bᵇ Γ L)))
   -- SubstFun {B} Bᵇ Γ e = idStr B
   -- SubstFun Bᵇ Γ (cnsTy T Γ' L) = SubstFun (slc Bᵇ T) Γ' L
   -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Ty↝ T' = Ty↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T')
   -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Tm↝ T' t' = Tm↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T') (SubCtxtTmStep Bᵇ T t Γ' T' t')
-  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {!    !}
+  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {! idStr (Slc (TopTyTm Γ') T')   !}
 
   ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
       → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
@@ -208,29 +235,30 @@ module BSystems where
       Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
       BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
 
+-- -- next try for substitutions
 
-  -- Eric's substitution setup
   data BSubst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
     ϵ : BSubst Bᵇ ε
     _►_ : {T : Typ B} {Γ : Ctxt (Slc B T)}
-          → (t : Tm B T)
+          → (t : Tm (Slc B T) (Ty↝ (wk Bᵇ T) T))
           → BSubst (slc Bᵇ T) Γ 
           → BSubst Bᵇ (T ⊳ Γ)
+{-
+  interleaved mutual
+
+    data BSubstH {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) : Ctxt A → Ctxt B → Type where
+      ε : (Γ : Ctxt A) → (BSubstH Aᵇ Bᵇ Γ ε)
+      cns : (Γ : Ctxt A) (T : Typ A) (t : (TermsInCtx Γ (Ty↝ (wkCtxt Bᵇ Γ) T)))
+            (Γ' : Ctxt (TopTyTm Γ)) ()
     
-  ApplySubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : BSubst Bᵇ Γ) → TopTyTm Γ ↝ B 
-  ApplySubst {B} Bᵇ Γ ϵ = idStr B
-  ApplySubst {B} Bᵇ _ (_►_ {T} {Γ} t σ) = sub Bᵇ T t ○ ApplySubst (slc Bᵇ T) Γ σ
-
-  -- These should compose ....
-  CtxSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) → Ctxt B → Ctxt B → Type
-  CtxSubst Bᵇ Γ Δ = BSubst (TopPre Bᵇ Γ) (AppCtxt Δ (wkCtxt Bᵇ Γ)) 
-
-  -- wkCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (B ↝ (TopTyTm Γ))
-  -- wkCtxt {B} Bᵇ ε = idStr B
-  -- wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
-
-  -- AppCtxt : {B : TyTmStr} {A : TyTmStr} (Γ : Ctxt A) (f : A ↝ B) → (Ctxt B)
-  -- AppCtxt ε f = ε
-  -- AppCtxt (T ⊳ Γ) f = (Ty↝ f T) ⊳ (AppCtxt Γ (Slc↝ f T))
-
-
+    data BSubstnew {B : TyTmStr} (Bᵇ : PreBSystem B) : Ctxt B → Ctxt B → Type where
+      ε : (Γ : Ctxt B) → (BSubstnew Bᵇ Γ ε)
+      cns : (Γ : Ctxt B) (T : Typ B) (t : (TermsInCtx Γ (Ty↝ (wkCtxt Bᵇ Γ) T)))
+            (Γ' : Ctxt (TopTyTm Γ)) (Δ' : Ctxt (Slc B T))
+            (σ : BSubstH (TopPre Bᵇ Γ) (slc Bᵇ T) Γ' Δ')
+            → (BSubstnew Bᵇ (concat Γ Γ') (T ⊳ Δ'))
+    
+    SubHom : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Γ : Ctxt A} {Δ : Ctxt B}
+            (σ : BSubstH Aᵇ Bᵇ Γ Δ) → ((TopTyTm Γ) ↝ (TopTyTm Δ))
+    SubHom = {!   !}
+-}

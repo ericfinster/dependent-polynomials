@@ -137,12 +137,14 @@ module BSystemToMonad where
     BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = AppSubst2 BS Γ T fst₁ fst₂ snd₁
     BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) = {!   !}
 
-    -- Definition of η
+    -- -- -- Definition of η
+
     EqTerProj : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
         → (TerminalProj BS (T ► ϵ)) ≡ (PreBSystem.wk Bᵇ T)
     EqTerProj {B} {Bᵇ} BS T = IdStrLN (PreBSystem.wk Bᵇ T)
+ 
+    -- This needs one of the BSystem equalities, so we need BSystems to arrive at Monads
 
-    -- This needs actual BSystems
     EqSub : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
         → (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))
             ≡ (idStr (TyTmStr.Slc B T))
@@ -171,6 +173,8 @@ module BSystemToMonad where
             idStr (TyTmStr.Slc B T)
         ∎ 
 
+
+    -- this seems to be unused
     EqTestTM : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T))) (T' : (TyTmStr.Typ (TyTmStr.Slc B T)))
         → (DepPoly.Tm ((BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))) Γ T')
             ≡ (DepPoly.Tm (BSystemToDepPoly (BSystem.BSlc BS T)) Γ T')
@@ -200,17 +204,27 @@ module BSystemToMonad where
         ≡⟨ refl ⟩
             (NeededSubst (BSystem.BSlc BS T) Γ T' t)
         ∎
+ 
+    -- It could be helpful to order these better 
 
     EqTest2 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
             → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
-                ≡ BSystemToDepPoly (BSystem.BSlc BS T)
+            ≡ BSystemToDepPoly (BSystem.BSlc BS T)
     EqTest2 BS T i .Tm x x₁ = refl {x = TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) x) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) x) x₁)} i
-    EqTest2 BS T i .⇑ {Γ} {T'} t = cong (λ x →  (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T) Γ T' x)) (EqTest5 BS T Γ T' t ) i
+    EqTest2 BS T i .⇑ {Γ} {T'} t = cong (λ x → transport (λ i₁ →
+            DepPoly (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ (~ i₁)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T) Γ T' x)) (EqTest5 BS T Γ T' t ) i
+
+    {-
+    cong (λ x →  (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T) Γ T' x)) (EqTest5 BS T Γ T' t ) i
+    -}
 
     EqTest4 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
             → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
                 ≡ (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
     EqTest4 BS T = cong (λ x → BSystemToDepPolyHelp BS BS (T ► ϵ) T x) (EqSub BS T) 
+
+    -- This is the central equality since we can then reduce DepPolyHelp to BSystemToDepPoly BS and recursively apply BSystemToMonad-η
 
     EqTest : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
             → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
@@ -221,7 +235,9 @@ module BSystemToMonad where
         ≡⟨ EqTest2 BS T ⟩      
             BSystemToDepPoly (BSystem.BSlc BS T)
         ∎ 
-{-
+
+    -- Needed if we don't have rewrite
+
     Eq-η : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
         → IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒
             transport (λ i →
@@ -231,13 +247,18 @@ module BSystemToMonad where
             BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))
     Eq-η {Bᵇ = Bᵇ} BS T = cong (λ x → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒ x)) 
         (transportRefl (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))))
--}
+
 
     {-# TERMINATING #-}
     BSystemToMonad-η : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) 
         → IdPoly (BSystemToTyStr BS) ⇒ BSystemToDepPoly BS
     BSystemToMonad-η {Bᵇ = Bᵇ} BS .Tm⇒ {Γ} {T} (idT .T) = PreBSystem.var Bᵇ T
-    BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
+    BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (Iso.fun (pathToIso (sym (Eq-η BS T))))     
+        (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
+
+    {-
+    (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (EqTest BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
+    -}
 
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
     BSystemToMonad BS .Monad.P = BSystemToDepPoly BS
