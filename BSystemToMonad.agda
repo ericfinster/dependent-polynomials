@@ -12,29 +12,34 @@ open import BSystemToDepPoly
 
 module BSystemToMonad where
 
+    {-# BUILTIN REWRITE _≡_ #-}
 
     postulate
         Eq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (fst₁ : Ctx (BSystemToTyStr BS))
             → (CtxToTyTmStr BS fst₁) ≡ (TopTyTm (CtxPToCtxB BS fst₁))
-        
+        {-# REWRITE Eq1 #-}
 
         
         Eq2 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (fst₁ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ (CtxToTyTmStr BS fst₁))
-            → {!   !}
+            → {! PathP ? ? ? !}
         
 
 
     -- BSystemToMonad-μHelp : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} ()
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
-    BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = {! _↝_.Tm↝ (SubstToHom fst₂) (transport (λ i → TyTmStr.Typ (Eq1 BS fst₁ i)) (_↝_.Ty↝ (TerminalProj BS fst₁) T)) !}
-    BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) = {! ⌈ fst₂ ⌉s  !} -- needs Basically BSystemToMonad for two BSystemToDepPolyHelp with codomain1 matching domain2
+    BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = {! _↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁ !}
+    BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) = {!   !} 
+    -- needs Basically BSystemToMonad for two BSystemToDepPolyHelp with codomain1 matching domain2
     -- it seems like agda wont reduce ⌈ fst₂ ⌉s to something which basically equals a repeated application of BSystemToDepPolyHelp which would make the help function kind of more involved
 
-
+    -- _↝_.Tm↝ (SubstToHom fst₂) (transport (λ i → TyTmStr.Typ (Eq1 BS fst₁ i)) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
     -- (transport (λ i → TyTmStr.Typ (Eq1 BS fst₁ i)) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
     -- transport (λ i → Ctxt (Eq1 BS fst₁ i))
     -- (_↝_.Ty↝ (TerminalProj BS fst₁) T)
+{-
+
+    this is all written to work without the rewrite
 
     -- -- -- Definition of η
 
@@ -72,7 +77,8 @@ module BSystemToMonad where
             idStr (TyTmStr.Slc B T)
         ∎ 
 
-     
+    -- in DepPolyHelpIsTrivialStep, when lifiting the polynomials we get on both sides a ToDepPolyHelp so it suffices to show that the morphism is equal 
+    -- since all other parameters are allready equal, so DepPolyHelpIsTrivialHom completes that proof
 
     DepPolyHelpIsTrivialHom : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T)))
                 (T' : TyTmStr.Typ (TyTmStr.Slc B T)) (t : (TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) Γ) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) Γ) T')))
@@ -132,9 +138,9 @@ module BSystemToMonad where
     BSystemToMonad-η {Bᵇ = Bᵇ} BS .Tm⇒ {Γ} {T} (idT .T) = PreBSystem.var Bᵇ T
     BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (Iso.fun (pathToIso (sym (Eq-η BS T))))     
         (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (DepPolyHelpIsTrivial BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
-
+-}
 
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
     BSystemToMonad BS .Monad.P = BSystemToDepPoly BS
     BSystemToMonad BS .Monad.μ = {!  BS !}
-    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = BSystemToMonad-η BS
+    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = {!   !}
