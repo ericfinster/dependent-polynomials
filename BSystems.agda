@@ -22,13 +22,19 @@ module BSystems where
   emptyStr .Tm = rec
   emptyStr .Slc = rec
 
+  -- equalities needed for the intoduction of hom equality
+
   proj-Typ : (A B : TyTmStr) (ɣ : A ≡ B) → (Typ A ≡ (Typ B))
   proj-Typ A B ɣ i = Typ (ɣ i)
 
   proj-Slc : (A B : TyTmStr) (ɣ : A ≡ B) (T : Typ A) (T' : Typ B) (ɣ' : (PathP (λ i → (Typ (ɣ i))) T T')) → (Slc A T) ≡ (Slc B T')
   proj-Slc A B ɣ T T' ɣ' i = Slc (ɣ i) (ɣ' i)
 
-  -- -- -- Contexts
+  -- -- --
+
+  -- -- -- Contexts (maybe usefull in the conversion case to DepPoly)
+        -- in a actaul BSystem viewpoint these are better thought of as the result of TopTyTm, so as a TyTmStr
+        -- which handles the dependency implicitely
 
   data Ctxt (A : TyTmStr) : Type where
     ε : Ctxt A
@@ -48,6 +54,8 @@ module BSystems where
   TermsInCtx : {B : TyTmStr} (Γ : Ctxt B) → (T : (TypesInCtx Γ)) → Type
   TermsInCtx Γ T = Tm (TopTyTm Γ) T
 
+  -- -- --
+
   record _↝_ (A B : TyTmStr) : Type where
     coinductive
     field
@@ -56,6 +64,30 @@ module BSystems where
       Slc↝ : (T : Typ A) → Slc A T ↝ Slc B (Ty↝ T)
 
   open _↝_
+
+  -- -- -- Composition and identity of Morphisms
+
+  idStr : (A : TyTmStr) → (A ↝ A)
+  idStr A .Ty↝ x = x
+  idStr A .Tm↝ T x = x
+  idStr A .Slc↝ T = idStr (Slc A T) 
+
+  _○_ : {A B C : TyTmStr} → (f : B ↝ C) → (g : A ↝ B) → (A ↝ C)
+  (f ○ g) .Ty↝ x = Ty↝ f (Ty↝ g x)
+  (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
+  (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T)
+
+
+  EmptySubst : (B : TyTmStr) → emptyStr ↝ B
+  EmptySubst B .Ty↝ = rec
+  EmptySubst B .Tm↝ T x = rec T
+  EmptySubst B .Slc↝ T = rec T
+
+  -- -- --
+
+  -- -- -- introducing and eliminating equalities between Homs
+
+  -- -- Elimination
 
   proj-ty : {A B : TyTmStr} (f g : A ↝ B) → f ≡ g → (T : Typ A) → Ty↝ f T ≡ Ty↝ g T
   proj-ty f g p T i = Ty↝ (p i) T 
@@ -66,6 +98,9 @@ module BSystems where
   proj-slc : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty f g p T i))) (Slc↝ f T) (Slc↝ g T)
   proj-slc f g p T i = Slc↝ (p i) T
 
+  -- -- Intoduction
+
+  -- needed to have a coinductive record of equality, to handle the coinductive structure of homs
   record ↝-bi-sim {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) : Type where
      coinductive
      field
@@ -73,17 +108,41 @@ module BSystems where
        Tm-eq : (T : Typ A) (t : Tm A T)  → PathP (λ i → Tm (ɣ i) (Ty-eq T i)) (Tm↝ f T t) (Tm↝ g T t)
        Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq T))
 
-  --  -- PathP (λ i → (Slc A T) ↝ (Slc B (Ty-eq i T))) (Slc↝ f T) (Slc↝ g T)
-  -- ↝-bi-sim (Slc↝ f T) (Slc↝ g T)
-  -- proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T)
-  -- (T : Typ A) (t : Tm A T) → PathP (λ i → (Tm B (Ty-eq i T))) (Tm↝ f T t) (Tm↝ g T t)
-
   open ↝-bi-sim
 
   ↝-≡-intro : {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) (β : ↝-bi-sim f g ɣ) → (PathP (λ i → (A ↝ (ɣ i))) f g) 
   ↝-≡-intro f g ɣ β i .Ty↝ T = Ty-eq β T i
   ↝-≡-intro f g ɣ β i .Tm↝ T t = Tm-eq β T t i
   ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β T)) (Slc-eq β T) i 
+
+  -- -- -- Standard Properties of composition and identity
+
+  ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
+      → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
+  ○-assoc f g h i .Ty↝ x = (Ty↝ f (Ty↝ g (Ty↝ h x)))
+  ○-assoc f g h i .Tm↝ T x = Tm↝ f (Ty↝ g (Ty↝ h T)) (Tm↝ g (Ty↝ h T) (Tm↝ h T x))
+  ○-assoc f g h i .Slc↝ T = ○-assoc (Slc↝ f (Ty↝ g (Ty↝ h T))) (Slc↝ g (Ty↝ h T)) (Slc↝ h T) i 
+
+  IdStrLN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim ((idStr B) ○ f) f refl
+  IdStrLN-bi-sim f .Ty-eq T = refl
+  IdStrLN-bi-sim f .Tm-eq T t = refl
+  IdStrLN-bi-sim f .Slc-eq T = IdStrLN-bi-sim (Slc↝ f T)
+
+  IdStrRN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim (f ○ (idStr A)) f refl
+  IdStrRN-bi-sim f .Ty-eq T = refl
+  IdStrRN-bi-sim f .Tm-eq T t = refl
+  IdStrRN-bi-sim f .Slc-eq T = IdStrRN-bi-sim (Slc↝ f T)
+
+  IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
+  IdStrLN {B = B} f = ↝-≡-intro ((idStr B) ○ f) f refl (IdStrLN-bi-sim f)
+
+  IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
+  IdStrRN {A} f = ↝-≡-intro (f ○ (idStr A)) f refl (IdStrRN-bi-sim f)
+
+  Ty↝-comp : {A B C : TyTmStr} (f : B ↝ C) (g : A ↝ B) (T : Typ A) → (Ty↝ (f ○ g) T) ≡ (Ty↝ f (Ty↝ g T))
+  Ty↝-comp f g T = refl
+
+  -- -- --
 
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
@@ -94,7 +153,28 @@ module BSystems where
       slc : (T : Typ A) → PreBSystem (Slc A T) 
 
   open PreBSystem
+
+  -- -- -- Interaction between morphisms to Contexts
+
+  AppCtxt : {B : TyTmStr} {A : TyTmStr} (Γ : Ctxt A) (f : A ↝ B) → (Ctxt B)
+  AppCtxt ε f = ε
+  AppCtxt (T ⊳ Γ) f = (Ty↝ f T) ⊳ (AppCtxt Γ (Slc↝ f T))
+
+  SubCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) (t : Tm B T) (Γ : Ctxt (Slc B T)) → (Ctxt B)
+  SubCtxt Bᵇ T t Γ = AppCtxt Γ (sub Bᵇ T t)
+
+  wkCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (B ↝ (TopTyTm Γ))
+  wkCtxt {B} Bᵇ ε = idStr B
+  wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
+
+  SlcHomCtxt : {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Γ : Ctxt A) (f : A ↝ B) → ((TopTyTm Γ) ↝ (TopTyTm (AppCtxt Γ f)))
+  SlcHomCtxt Aᵇ Bᵇ ε f = f
+  SlcHomCtxt Aᵇ Bᵇ (T ⊳ Γ) f = SlcHomCtxt (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ (Slc↝ f T) 
+
+  -- -- -- 
   
+  -- Lifiting PreBSystem along Context
+
   TopPre : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (PreBSystem (TopTyTm Γ))
   TopPre Bᵇ ε = Bᵇ
   TopPre Bᵇ (T ⊳ Γ) = TopPre (slc Bᵇ T) Γ
@@ -116,37 +196,7 @@ module BSystems where
       var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i))) (var Bᵇ (Ty↝ ϕ T)) 
       SlcHomomorphism : (T : Typ A) → is-homomorphism (Slc A T) (Slc B (Ty↝ ϕ T)) (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T) -- not in BSystemsRewrite, but I'm pretty sure one needs this
 
-  idStr : (A : TyTmStr) → (A ↝ A)
-  idStr A .Ty↝ x = x
-  idStr A .Tm↝ T x = x
-  idStr A .Slc↝ T = idStr (Slc A T)  
-
-  EmptySubst : (B : TyTmStr) → emptyStr ↝ B
-  EmptySubst B .Ty↝ = rec
-  EmptySubst B .Tm↝ T x = rec T
-  EmptySubst B .Slc↝ T = rec T
-
-  _○_ : {A B C : TyTmStr} → (f : B ↝ C) → (g : A ↝ B) → (A ↝ C)
-  (f ○ g) .Ty↝ x = Ty↝ f (Ty↝ g x)
-  (f ○ g) .Tm↝ T x = Tm↝ f (Ty↝ g T) (Tm↝ g T x)
-  (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T)
-
-  AppCtxt : {B : TyTmStr} {A : TyTmStr} (Γ : Ctxt A) (f : A ↝ B) → (Ctxt B)
-  AppCtxt ε f = ε
-  AppCtxt (T ⊳ Γ) f = (Ty↝ f T) ⊳ (AppCtxt Γ (Slc↝ f T))
-
-  SubCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) (t : Tm B T) (Γ : Ctxt (Slc B T)) → (Ctxt B)
-  SubCtxt Bᵇ T t Γ = AppCtxt Γ (sub Bᵇ T t)
-
-  wkCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (B ↝ (TopTyTm Γ))
-  wkCtxt {B} Bᵇ ε = idStr B
-  wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
-
-  SlcHomCtxt : {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Γ : Ctxt A) (f : A ↝ B) → ((TopTyTm Γ) ↝ (TopTyTm (AppCtxt Γ f)))
-  SlcHomCtxt Aᵇ Bᵇ ε f = f
-  SlcHomCtxt Aᵇ Bᵇ (T ⊳ Γ) f = SlcHomCtxt (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ (Slc↝ f T) 
-
-  -- -- -- Substitutions
+  -- -- -- Substitutions (I'm quite certain that this is wrong)
 
   -- this should basically be substitution, though I would like to turn this into a morphism somehow
   data ListOfTerms {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
@@ -200,42 +250,7 @@ module BSystems where
   -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Tm↝ T' t' = Tm↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T') (SubCtxtTmStep Bᵇ T t Γ' T' t')
   -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {! idStr (Slc (TopTyTm Γ') T')   !}
 
-  ○-assoc : {A B C D : TyTmStr} → (f : C ↝ D) → (g : B ↝ C) → (h : A ↝ B) 
-      → ((f ○ g) ○ h) ≡ (f ○ (g ○ h))
-  ○-assoc f g h i .Ty↝ x = (Ty↝ f (Ty↝ g (Ty↝ h x)))
-  ○-assoc f g h i .Tm↝ T x = Tm↝ f (Ty↝ g (Ty↝ h T)) (Tm↝ g (Ty↝ h T) (Tm↝ h T x))
-  ○-assoc f g h i .Slc↝ T = ○-assoc (Slc↝ f (Ty↝ g (Ty↝ h T))) (Slc↝ g (Ty↝ h T)) (Slc↝ h T) i 
-
-  IdStrLN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim ((idStr B) ○ f) f refl
-  IdStrLN-bi-sim f .Ty-eq T = refl
-  IdStrLN-bi-sim f .Tm-eq T t = refl
-  IdStrLN-bi-sim f .Slc-eq T = IdStrLN-bi-sim (Slc↝ f T)
-
-  IdStrRN-bi-sim : {A B : TyTmStr} (f : A ↝ B) → ↝-bi-sim (f ○ (idStr A)) f refl
-  IdStrRN-bi-sim f .Ty-eq T = refl
-  IdStrRN-bi-sim f .Tm-eq T t = refl
-  IdStrRN-bi-sim f .Slc-eq T = IdStrRN-bi-sim (Slc↝ f T)
-
-  IdStrLN : {A B : TyTmStr} (f : A ↝ B) → (idStr B) ○ f ≡ f
-  IdStrLN {B = B} f = ↝-≡-intro ((idStr B) ○ f) f refl (IdStrLN-bi-sim f)
-
-  IdStrRN : {A B : TyTmStr} (f : A ↝ B) → f ○ (idStr A) ≡ f
-  IdStrRN {A} f = ↝-≡-intro (f ○ (idStr A)) f refl (IdStrRN-bi-sim f)
-
-  Ty↝-comp : {A B C : TyTmStr} (f : B ↝ C) (g : A ↝ B) (T : Typ A) → (Ty↝ (f ○ g) T) ≡ (Ty↝ f (Ty↝ g T))
-  Ty↝-comp f g T = refl
-  
-  record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
-    coinductive
-    field
-      wk-is-homomorphism : (T : Typ A) → is-homomorphism A (Slc A T) Aᵇ (slc Aᵇ T) (wk Aᵇ T) 
-      sub-is-homomorphism : (T : Typ A) → (t : Tm A T) → is-homomorphism (Slc A T) A (slc Aᵇ T) Aᵇ (sub Aᵇ T t)
-      sub-of-wk-Tm : {T : Typ A} (t : Tm A T) → ((sub Aᵇ T t) ○ (wk Aᵇ T)) ≡ (idStr A)
-      sub-of-wk-Typ : (T : Typ A) → ((sub (slc Aᵇ T) (Ty↝ (Aᵇ .wk T) T) (var Aᵇ T)) ○ (Slc↝ (wk Aᵇ T)) T) ≡ (idStr (Slc A T))
-      Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
-      BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
-
--- -- next try for substitutions
+  -- -- next try for substitutions
 
   data BSubst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
     ϵ : BSubst Bᵇ ε
@@ -262,3 +277,15 @@ module BSystems where
             (σ : BSubstH Aᵇ Bᵇ Γ Δ) → ((TopTyTm Γ) ↝ (TopTyTm Δ))
     SubHom = {!   !}
 -}
+  
+  -- -- --
+
+  record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
+    coinductive
+    field
+      wk-is-homomorphism : (T : Typ A) → is-homomorphism A (Slc A T) Aᵇ (slc Aᵇ T) (wk Aᵇ T) 
+      sub-is-homomorphism : (T : Typ A) → (t : Tm A T) → is-homomorphism (Slc A T) A (slc Aᵇ T) Aᵇ (sub Aᵇ T t)
+      sub-of-wk-Tm : {T : Typ A} (t : Tm A T) → ((sub Aᵇ T t) ○ (wk Aᵇ T)) ≡ (idStr A)
+      sub-of-wk-Typ : (T : Typ A) → ((sub (slc Aᵇ T) (Ty↝ (Aᵇ .wk T) T) (var Aᵇ T)) ○ (Slc↝ (wk Aᵇ T)) T) ≡ (idStr (Slc A T))
+      Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
+      BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
