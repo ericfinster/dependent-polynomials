@@ -79,9 +79,10 @@ module BSystemToDepPoly where
     cong (λ x → CtxToTyTmStr BS x) (EqHelp BS Γ')
     -}
 
---     BSys++Eq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
---                  → (TopTyTm (CtxPToCtxB (CtxToBSys BS Γ₁) (Γ ++ Γ'))) ≡ (TopTyTm (CtxPToCtxB (CtxToBSys (CtxToBSys BS Γ₁) Γ) Γ'))
---     BSys++Eq = ?
+    BSys++Eq : {A : TyTmStr} {Aᵇ : PreBSystem A} (AS : BSystem A Aᵇ) (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))) 
+                → (TopTyTm (CtxPToCtxB (CtxToBSys AS Γ) Γ')) ≡ (TopTyTm (CtxPToCtxB AS (Γ ++ Γ')))
+    BSys++Eq AS ϵ Γ' = refl
+    BSys++Eq AS (T ► Γ) Γ' = BSys++Eq (BSystem.BSlc AS T) Γ Γ'
 
     TerminalProj : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → B ↝ (CtxToTyTmStr BS Γ)
     TerminalProj {B} BS ϵ = idStr B
@@ -157,27 +158,29 @@ module BSystemToDepPoly where
     -- -- --
 
     -- -- -- Converting Substitutions
-    postulate 
+     
+    -- gets way more complex without the rewrite
+    SubstToHomHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
+                    {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
+                    {T : TyTmStr.Typ B} {f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ)}
+                    {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr (BSystem.BSlc BS T))}
+                    (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ T f) Γ' Δ')
+                    → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ (TopTyTm (CtxPToCtxB (CtxToBSys AS Γ) Γ'))
+    SubstToHomHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● _) = (wkCtxt (CtxToPreSys AS Γ) (CtxPToCtxB (CtxToBSys AS Γ) Γ')) ○ f
+    SubstToHomHelp {AS = AS} {BS = BS} {Γ = Γ} {T = T} (cns Γ' T' t Γ'' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc (BSystem.BSlc BS T) T') Δ') ↝ (BSys++Eq (CtxToBSys AS Γ) Γ' Γ'' i)))
+                    (SubstToHomHelp ɣ)
 
-        SubstToHomHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                        {T : TyTmStr.Typ B} {f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ)}
-                        {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr (BSystem.BSlc BS T))}
-                        (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ T f) Γ' Δ')
-                        → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ (TopTyTm (CtxPToCtxB (CtxToBSys AS Γ) Γ'))
---     SubstToHomHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● _) = (wkCtxt (CtxToPreSys AS Γ) (CtxPToCtxB (CtxToBSys AS Γ) Γ')) ○ f
---     SubstToHomHelp (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomHelp  !}
-
-
+        -- transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc (BSystem.BSlc BS T₁) T) Δ') ↝ (BSys++Eq (CtxToBSys AS Γ) Γ' Γ'' i))) SubstToHomHelp ɣ 
         -- someting like NeededSubst but iteratively is what needs to be done here
 
-    postulate 
 
-        SubstToHom : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
-                        {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
-                        → (TopTyTm (CtxPToCtxB BS Δ)) ↝ (TopTyTm (CtxPToCtxB BS Γ))
---     SubstToHom {Bᵇ = Bᵇ} BS Γ Δ (● .Γ) = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
---     SubstToHom {Bᵇ = Bᵇ} BS Γ Δ (cns Γ₁ T t Γ' Δ' ɣ) = {! SubstToHomHelp   !}
+    SubstToHom : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
+                    {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
+                    → (TopTyTm (CtxPToCtxB BS Δ)) ↝ (TopTyTm (CtxPToCtxB BS Γ))
+    SubstToHom {Bᵇ = Bᵇ} {BS = BS} {Γ = Γ} (● Γ) = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
+    SubstToHom {BS = BS} (cns Γ T t Γ' Δ' ɣ) = {!  transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ ) !}
+
+    -- wkCtxt Bᵇ (CtxPToCtxB BS Γ)
 
 --     SubstToList : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
 --                 (Δ : Ctx (BSystemToTyStr BS)) (ɣ : Subst (BSystemToDepPoly BS) Γ Δ) 
