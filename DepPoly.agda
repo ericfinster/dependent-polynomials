@@ -46,6 +46,14 @@ module DepPoly where
   ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (sym (λ i → (DepPoly (++-ceil Γ Γ₁ (~ i)) (𝕋 // T)))) (M .⇑ t)
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
+  -- ++-sub : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+  --   → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
+  --   → (ɣ : Subst M Γ Δ) → (Γ' : Ctx ⌈ Γ ⌉) (Δ' : Ctx ⌈ Δ ⌉)
+  --   → (ɣ' : Subst ⌈ ɣ ⌉s Γ' Δ')
+  --   → (Subst M (Γ ++ Γ') (Δ ++ Δ'))
+  -- ++-sub (● _) Γ' Δ' ɣ' = {!   !}
+  -- ++-sub (cns Γ T t Γ'' Δ'' ɣ) Γ' Δ' ɣ' = {!  ++-sub ɣ ? Δ'  !}
+
   tmToSubst : {𝕊 𝕋 : TyStr} {P : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} {A : Ty 𝕋} (t : Tm P Γ A)
     → Subst P Γ (A ► ϵ)
