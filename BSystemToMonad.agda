@@ -12,13 +12,6 @@ open import BSystemToDepPoly
 
 module BSystemToMonad where
 
-    {-# BUILTIN REWRITE _≡_ #-}
-
-    postulate
-        Eq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (fst₁ : Ctx (BSystemToTyStr BS))
-            → (CtxToTyTmStr BS fst₁) ≡ (TopTyTm (CtxPToCtxB BS fst₁))
-        {-# REWRITE Eq1 #-}
-
         -- this should be justified by the naturality of sub
     Eq3 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)(T : TyTmStr.Typ B) (fst₁ : Ctx (BSystemToTyStr BS)) (Γ : Ctx (BSystemToTyStr BS)) 
          (fst₂ : Subst (BSystemToDepPoly BS) Γ fst₁)
@@ -32,7 +25,7 @@ module BSystemToMonad where
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
     BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (Eq3 BS T fst₁ Γ fst₂ i))) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
-    BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) .Tm⇒ (fst₃ , fst₄ , snd₂) = {!    !}
+    BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) .Tm⇒ {Γ} (fst₃ , fst₄ , snd₂) = {! _↝_.Tm↝ (SubstToHomHelp (transport (λ i → Subst (SubstToHomEq1 fst₂ i) Γ fst₃) fst₄)) ? snd  !}
     BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) .⇑⇒ (fst₃ , fst₄ , snd₂) .Tm⇒ (fst₅ , fst₆ , snd₃) = {!   !}
     BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) .⇑⇒ (fst₃ , fst₄ , snd₂) .⇑⇒ = {!   !}
     -- needs Basically BSystemToMonad for two BSystemToDepPolyHelp with codomain1 matching domain2
@@ -47,6 +40,9 @@ module BSystemToMonad where
 {-
 
     this is all written to work without the rewrite
+
+    !!! The η definition needs to be reworked since I simplified BSystemToDepPolyHelp to take the already sliced BSystem and not the original BSystem and a type !!!
+    !!! This hopeully simplifies μ but probably implies one needs to rework some of the equalities !!!
 
     -- -- -- Definition of η
 
