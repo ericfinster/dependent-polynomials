@@ -258,6 +258,23 @@ module BSystems where
           → (t : Tm (Slc B T) (Ty↝ (wk Bᵇ T) T))
           → BSubst (slc Bᵇ T) Γ 
           → BSubst Bᵇ (T ⊳ Γ)
+
+
+  data BSubst' {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Ctxt (TopTyTm Γ) → Type where
+    ϵ : (Γ : Ctxt B) → BSubst' Bᵇ Γ ε
+    _►_ : (Γ : Ctxt B)
+      → (T : Typ (TopTyTm Γ)) (Δ : Ctxt (Slc (TopTyTm Γ) T))
+      → (t : Tm (TopTyTm Γ) T)
+      → BSubst' Bᵇ Γ (SubCtxt (TopPre Bᵇ Γ) T t Δ) 
+      → BSubst' Bᵇ Γ (T ⊳ Δ) 
+
+  VarSub : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) → BSubst' Bᵇ (T ⊳ ε) (Ty↝ (wk Bᵇ T) T ⊳ ε)
+  VarSub Bᵇ T = _►_ (T ⊳ ε) (Ty↝ (wk Bᵇ T) T) ε (var Bᵇ T) (ϵ (T ⊳ ε)) 
+
+  NonDepBSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) → Ctxt B → Ctxt B → Type 
+  NonDepBSubst Bᵇ Γ Δ = BSubst' Bᵇ Γ (AppCtxt Δ (wkCtxt Bᵇ Γ))
+
+
 {-
   interleaved mutual
 

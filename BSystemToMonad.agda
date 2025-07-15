@@ -20,7 +20,6 @@ module BSystemToMonad where
     Eq3 BS T fst₁ Γ (cns Γ₁ T₁ t Γ' Δ' fst₂) = {! Eq3   !}
         
 
-
     -- BSystemToMonad-μHelp : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} ()
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)

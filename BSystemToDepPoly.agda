@@ -182,7 +182,7 @@ module BSystemToDepPoly where
                     → (TopTyTm (CtxPToCtxB BS Δ)) ↝ (TopTyTm (CtxPToCtxB BS Γ))
     SubstToHom {Bᵇ = Bᵇ} {BS = BS} {Γ = Γ} (● Γ) = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
     SubstToHom {BS = BS} (cns Γ T t Γ' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ (BSys++Eq BS Γ Γ' i)) (SubstToHomHelp ɣ)
-    
+
     postulate
 
         -- SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
@@ -197,22 +197,22 @@ module BSystemToDepPoly where
         --                 → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS Δ') Γ' (SubstToHomHelp ɣ)) 
     
 
-    SubstToHomEqHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                        {f : B ↝ (CtxToTyTmStr AS Γ)}
-                        {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                        (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-                        → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS Δ') Γ' (SubstToHomHelp ɣ)) 
-    SubstToHomEqHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .Tm x x₁ = TyTmStr.Tm  (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjComp (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ f x₁)) 
-    SubstToHomEqHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .⇑ {x} {T} t = {!   !} -- (TerminalProjComp (CtxToBSys AS Γ) Γ' x) 
-    SubstToHomEqHelp (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomEqHelp ɣ  !}
+      SubstToHomEqHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
+                          {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
+                          {f : B ↝ (CtxToTyTmStr AS Γ)}
+                          {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
+                          (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
+                          → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS Δ') Γ' (SubstToHomHelp ɣ)) 
+      -- SubstToHomEqHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .Tm x x₁ = TyTmStr.Tm  (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjComp (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ f x₁)) 
+      -- SubstToHomEqHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .⇑ {x} {T} t = {!   !} -- (TerminalProjComp (CtxToBSys AS Γ) Γ' x) 
+      -- SubstToHomEqHelp (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomEqHelp ɣ  !}
 
- 
-    SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
-                        {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
-                        → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp BS (CtxToBSys BS Δ) Γ (SubstToHom ɣ))
-    SubstToHomEq1 (● _) i .Tm x x₁ = {!   !}
-    SubstToHomEq1 (● _) i .⇑ t = {!   !}
-    SubstToHomEq1 (cns Γ T t Γ' Δ' ɣ) = {!  SubstToHomEqHelp ɣ !}
+
+      SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
+                          {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
+                          → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp BS (CtxToBSys BS Δ) Γ (SubstToHom ɣ))
+      -- SubstToHomEq1 (● _) i .Tm x x₁ = {!   !}
+      -- SubstToHomEq1 (● _) i .⇑ t = {!   !}
+      -- SubstToHomEq1 (cns Γ T t Γ' Δ' ɣ) = {!  SubstToHomEqHelp ɣ !}
 
 
