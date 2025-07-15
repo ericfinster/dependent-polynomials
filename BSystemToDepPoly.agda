@@ -138,16 +138,10 @@ module BSystemToDepPoly where
     BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ f .⇑ {x} {T'} t = BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T') x
         (NeededSubstGen (CtxToBSys AS Γ) BS x ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T' t)
 
-    -- BSystemToDepPolyHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-    --             (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
-    --             (T : TyTmStr.Typ B) (f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ)) 
-    --             → (DepPoly (BSystemToTyStr (CtxToBSys AS Γ)) (BSystemToTyStr (BSystem.BSlc BS T)))
-    -- BSystemToDepPolyHelp AS BS Γ T f .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) 
-    --     x) (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x ○ f) x₁)
-    -- BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ T f .⇑ {x} {T'} t = (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
-    --     (NeededSubstGen (CtxToBSys AS Γ) (BSystem.BSlc BS T) x ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T' t))
 
         {-
+            wont work exactly like this, since we now hand the already sliced BSystem to the function
+        
         without rewrite
             transport (λ i → DepPoly (⌈_⌉BSysEqual (CtxToBSys AS Γ) x (~ i)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
         (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
@@ -188,46 +182,7 @@ module BSystemToDepPoly where
                     → (TopTyTm (CtxPToCtxB BS Δ)) ↝ (TopTyTm (CtxPToCtxB BS Γ))
     SubstToHom {Bᵇ = Bᵇ} {BS = BS} {Γ = Γ} (● Γ) = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
     SubstToHom {BS = BS} (cns Γ T t Γ' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ (BSys++Eq BS Γ Γ' i)) (SubstToHomHelp ɣ)
-
-    WeirdHelper : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T))) → TyTmStr
-    WeirdHelper {B} BS T ϵ = TyTmStr.Slc B T
-    WeirdHelper BS T (T' ► Γ) = WeirdHelper (BSystem.BSlc BS T) T' Γ 
     
-    postulate
-
-        NeededEq : {A : TyTmStr} {Aᵇ : PreBSystem A} (AS : BSystem A Aᵇ) (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ)))
-                (Γ'' : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')))
-                → (BSystemToTyStr (CtxToBSys (CtxToBSys (CtxToBSys AS Γ) Γ') Γ'')) ≡ (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) (Γ' ++ Γ'')))
-    -- NeededEq AS Γ Γ' Γ'' i .Ty = {!   !}
-    -- NeededEq AS Γ Γ' Γ'' i // x = {!   !}
-
-    SubstToHomPoly : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                {f : B ↝ (CtxToTyTmStr AS Γ)}
-                {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-                → DepPoly (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')) (BSystemToTyStr (CtxToBSys BS Δ'))
-    SubstToHomPoly {AS = AS} {BS = BS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') .Tm Γ'' T' = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys (CtxToBSys AS Γ) Γ') Γ'') 
-            (_↝_.Ty↝ ((TerminalProj (CtxToBSys (CtxToBSys AS Γ) Γ') Γ'') ○ ((TerminalProj (CtxToBSys AS Γ) Γ') ○ f)) T') 
-    SubstToHomPoly {AS = AS} {BS = BS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') .⇑ {Γ''} {T'} t = BSystemToDepPolyHelp (CtxToBSys (CtxToBSys AS Γ) Γ') (BSystem.BSlc BS T') Γ''
-            (NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') BS Γ'' ((TerminalProj (CtxToBSys (CtxToBSys AS Γ) Γ') Γ'') ○ ((TerminalProj (CtxToBSys AS Γ) Γ') ○ f)) T' t) 
-    SubstToHomPoly {AS = AS} {BS = BS} {Γ = Γ} (cns Γ' T' t Γ'' Δ' ɣ) = transport (λ i → DepPoly (NeededEq AS Γ Γ' Γ'' i) (BSystemToTyStr (CtxToBSys (BSystem.BSlc BS T') Δ'))) (SubstToHomPoly ɣ) 
-
-    -- the idea is to show that ⌈ ɣ ⌉s equals some expression of the form ToDepPolyHelp, to be able to construct a morphism from a substitution
-    postulate
-
-        SubstToHomEq : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                        {f : B ↝ (CtxToTyTmStr AS Γ)}
-                        {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                        (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-                        → ⌈ ɣ ⌉s ≡ (SubstToHomPoly ɣ)
---     SubstToHomEq (● _) i .Tm x x₁ = {!   !}
---     SubstToHomEq (● _) i .⇑ = {!   !}
---     SubstToHomEq (cns Γ T t Γ' Δ' ɣ) = {!   !}
-
-    -- won't work because the lift has no repeating pattern
-        -- could maybe work by extending gamma in each step by the lower portion of gamma'
     postulate
 
         SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
@@ -241,54 +196,7 @@ module BSystemToDepPoly where
                         (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
                         → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS Δ') Γ' (SubstToHomHelp ɣ)) 
 
-        -- DepPoly (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')) (BSystemToTyStr (CtxToBSys BS Δ'))
-
-        -- SubstToHomSubst : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-        --                 {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-        --                 {f : B ↝ (CtxToTyTmStr AS Γ)}
-        --                 {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-        --                 (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-        --                 (Γ1 : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')))
-        --                 (Δ1 : Ctx (BSystemToTyStr (CtxToBSys BS Δ')))
-        --                 (ɣ' : Subst (SubstToHomPoly ɣ) Γ1 Δ1)
-        --                 → (TopTyTm (CtxPToCtxB (CtxToBSys BS Δ') Δ1)) ↝ TopTyTm (CtxPToCtxB (CtxToBSys (CtxToBSys AS Γ) Γ') Γ1)
---     SubstToHomSubst {AS = AS} {Γ = Γ} {Γ' = Γ'} ɣ Γ1 Δ1 (● .Γ1) = (TerminalProj (CtxToBSys (CtxToBSys AS Γ) Γ') Γ1) ○ (SubstToHomHelp ɣ) 
---     SubstToHomSubst {Γ' = Γ'} ɣ Γ1 Δ1 (cns Γ'' T t Γ''' Δ' ɣ') = {! cns    !}
-
-
-    --  ⌈ ɣ ⌉s 
-    -- (_↝_.Ty↝  (wkCtxt Bᵇ  (T ⊳ (CtxPToCtxB (BSystem.BSlc BS T) Δ'))) T)
-    -- BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS (CtxBToCtxP BS (T ⊳ (CtxPToCtxB (BSystem.BSlc BS T) Δ')))) Γ'
-
-    -- BSystemToDepPolyHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-    --             (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
-    --             (T : TyTmStr.Typ B) (f : (TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ)) 
-    --             → (DepPoly (BSystemToTyStr (CtxToBSys AS Γ)) (BSystemToTyStr (BSystem.BSlc BS T)))
-    -- BSystemToDepPolyHelp AS BS Γ T f .Tm x x₁ = TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) 
-    --     x) (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ) x ○ f) x₁)
-    -- BSystemToDepPolyHelp {Aᵇ = Aᵇ} AS BS Γ T f .⇑ {x} {T'} t = (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) x T'
-    --     (NeededSubstGen (CtxToBSys AS Γ) (BSystem.BSlc BS T) x ((TerminalProj (CtxToBSys AS Γ) x) ○ f) T' t))
-
-
-
---     SubstToList : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
---                 (Δ : Ctx (BSystemToTyStr BS)) (ɣ : Subst (BSystemToDepPoly BS) Γ Δ) 
---                 → (ListOfTerms Bᵇ (CtxPToCtxB BS Γ))
---     SubstToList BS Γ Δ (● .Γ) = {!   !}
---     SubstToList BS Γ Δ (cns Γ₁ T t Γ' Δ' ɣ) = {!   !}
-
---     ListToSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) 
---                 → (Subst (BSystemToDepPoly BS) (CtxBToCtxP BS Γ) (CtxBToCtxP BS (SubstCtxt Bᵇ Γ L)))
---     ListToSubst {B} {Bᵇ} BS Γ e = ● ϵ
---     ListToSubst {B} {Bᵇ} BS Γ (cnsTy T Γ' L) = {!   !}
---     ListToSubst {B} {Bᵇ} BS Γ (cnsTm T t Γ' L) = {!   !}
  
-   
---     BSystemToSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)
---         → (Γ : Ctxt B)
---         → (ListOfTerms Bᵇ Γ) ≡ Subst (BSystemToDepPoly BS) (CtxBToCtxP BS Γ) _ 
---     BSystemToSubst BS ε i = {!   !}
---     BSystemToSubst BS (T ⊳ Γ) i = {!   !}
 
 
 
