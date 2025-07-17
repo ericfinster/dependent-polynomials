@@ -27,8 +27,12 @@ module BSystems where
   proj-Typ : (A B : TyTmStr) (ɣ : A ≡ B) → (Typ A ≡ (Typ B))
   proj-Typ A B ɣ i = Typ (ɣ i)
 
-  proj-Slc : (A B : TyTmStr) (ɣ : A ≡ B) (T : Typ A) (T' : Typ B) (ɣ' : (PathP (λ i → (Typ (ɣ i))) T T')) → (Slc A T) ≡ (Slc B T')
-  proj-Slc A B ɣ T T' ɣ' i = Slc (ɣ i) (ɣ' i)
+  proj-Tm : (A B : TyTmStr) (ɣ : A ≡ B) → PathP (λ i → Typ (ɣ i) → Type) (Tm A) (Tm B)
+  proj-Tm A B ɣ i = Tm (ɣ i)
+ 
+
+  proj-Slc : (A B : TyTmStr) (ɣ : A ≡ B) → PathP (λ i → Typ (ɣ i) → TyTmStr) (Slc A) (Slc B)
+  proj-Slc A B ɣ i = Slc (ɣ i)
 
   -- -- --
 
@@ -98,22 +102,24 @@ module BSystems where
   proj-slc : {A B : TyTmStr} (f g : A ↝ B) → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty f g p T i))) (Slc↝ f T) (Slc↝ g T)
   proj-slc f g p T i = Slc↝ (p i) T
 
-  -- -- Intoduction
+  -- Intoduction
 
   -- needed to have a coinductive record of equality, to handle the coinductive structure of homs
   record ↝-bi-sim {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) : Type where
      coinductive
      field
        Ty-eq : (T : Typ A) → (PathP (λ i → (Typ (ɣ i))) (Ty↝ f T) (Ty↝ g T))
-       Tm-eq : (T : Typ A) (t : Tm A T)  → PathP (λ i → Tm (ɣ i) (Ty-eq T i)) (Tm↝ f T t) (Tm↝ g T t)
-       Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq T))
+       Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → Tm (ɣ i) (Ty-eq T i)) (Tm↝ f T t) (Tm↝ g T t)
+       Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (λ i → (proj-Slc B C ɣ i) (Ty-eq T i))
 
   open ↝-bi-sim
 
   ↝-≡-intro : {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) (β : ↝-bi-sim f g ɣ) → (PathP (λ i → (A ↝ (ɣ i))) f g) 
   ↝-≡-intro f g ɣ β i .Ty↝ T = Ty-eq β T i
   ↝-≡-intro f g ɣ β i .Tm↝ T t = Tm-eq β T t i
-  ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β T)) (Slc-eq β T) i 
+  ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (λ j → (proj-Slc B C ɣ j) (Ty-eq β T j)) (Slc-eq β T) i
+
+  -- ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β T)) (Slc-eq β T) i 
 
   -- -- -- Standard Properties of composition and identity
 
