@@ -1,5 +1,7 @@
 {-# OPTIONS --no-termination-check --no-positivity-check #-}
 
+-- {-# OPTIONS --allow-unsolved-metas #-}
+
 open import Cubical.Foundations.Prelude
 
 open import TyStr
@@ -49,6 +51,9 @@ module BSystemToDepPoly where
     CtxToBSys BS ϵ = BS
     CtxToBSys BS (T ► Γ) = CtxToBSys (BSystem.BSlc BS T) Γ
 
+    AppCtx : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS))
+                → (f : B ↝ C) → (Ctx (BSystemToTyStr CS))
+    AppCtx BS CS Γ f = CtxBToCtxP CS (AppCtxt (CtxPToCtxB BS Γ) f)
     -- -- --
 
     
@@ -112,11 +117,43 @@ module BSystemToDepPoly where
     TerminalProj : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → B ↝ (CtxToTyTmStr BS Γ)
     TerminalProj {Bᵇ = Bᵇ} BS Γ = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
 
+    AppTerminalProj : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                (f : B ↝ C) → C ↝ CtxToTyTmStr CS (AppCtx  BS CS Γ f)
+    AppTerminalProj BS CS Γ f = TerminalProj CS (AppCtx BS CS Γ f)
+
+    HelperEq : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                (f : B ↝ C) 
+                → (CtxToTyTmStr BS Γ ↝ (CtxToTyTmStr CS (AppCtx BS CS Γ f))) ≡ (CtxToTyTmStr BS Γ ↝ (TopTyTm (AppCtxt (CtxPToCtxB BS Γ) f)))
+    HelperEq BS CS ϵ f = refl
+    HelperEq BS CS (T ► Γ) f = cong (λ x → (CtxToTyTmStr BS (T ► Γ) ↝ (TopTyTm x))) (rInv (BSystem.BSlc CS (_↝_.Ty↝ f T)) (AppCtxt (CtxPToCtxB (BSystem.BSlc BS T) Γ) (_↝_.Slc↝ f T)))
+
+        -- cong (λ x → TopTyTm x) (rInv (BSystem.BSlc CS (_↝_.Ty↝ f T)) (AppCtxt (CtxPToCtxB (BSystem.BSlc BS T) Γ) (_↝_.Slc↝ f T)))
+
+    TerminalProjCommutes : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                (f : B ↝ C) (H : is-homomorphism Bᵇ Cᵇ f)
+                → (AppTerminalProj BS CS Γ f ○ f) 
+                ≡ (transport (λ i → (HelperEq BS CS Γ f (~ i))) (SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f)
+                ○ TerminalProj BS Γ)
+    TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = {! wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f   !} 
+                
+                -- -- (sym (transportRefl (f ○ TerminalProj BS ϵ)))       (sym (IdStrLN f))
+                --  transport  (λ i → (CtxToTyTmStr CS (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f) (~ i))))
+                -- (SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) 
+                -- _∙_
+
     TerminalProjCeil : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP (λ i → (φ : Ctx (++-ceil Γ Γ' i)) → (TyTmStr++Eq BS Γ Γ' i) ↝ (CtxToTyBSys++Eq BS Γ Γ' i φ)) (λ φ → (TerminalProj (CtxToBSys BS (Γ ++ Γ')) φ)) λ φ → (TerminalProj (CtxToBSys (CtxToBSys BS Γ) Γ') φ)
     TerminalProjCeil BS ϵ Γ' = refl
     TerminalProjCeil BS (T ► Γ) Γ' = TerminalProjCeil (BSystem.BSlc BS T) Γ Γ'
 
+        {-
+                Since my original idea of using naturality to move all the sub applications down through NeededSubstGen won't work
+                since we don't necessarily have a preimage for every term, we now need to move the Delta Projection up though the final morphism
+                and then do the same to the substitutions to finally then be able to show that these cancel out and we're left with just the
+                terminal projection of Gamma
+                Therefore we first need to be able to show that terminal projections commute with homomrphisms and then start on the rest,
+                by redefining the substitution projections in a more usable way
+        -}
 
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
@@ -160,13 +197,11 @@ module BSystemToDepPoly where
             → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ))
     NeededSubstGen AS BS Γ f T t = (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (_↝_.Slc↝ f T)
 
+--     NeededSubstGenEqBSys : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
+--             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) (H : (is-homomorphism Bᵇ (CtxToPreSys AS Γ) f))
+--             → {! (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t)   !} 
+
         -- this needs basically the same as BSystemToDepPolyHelpEq but I also need to handle the term in NeededSubstGen
-    NeededSubstGenEq : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) 
-                (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx ⌈ Γ ⌉) (T : TyTmStr.Typ B) (x : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')))
-                → PathP (λ i → {! (φ : (Ctx (++-ceil Γ Γ' i))) → (g : (B ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))) 
-                → (TyTmStr.Tm (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjCompf (CtxToBSys AS Γ) Γ' x f i) T))
-                → ((TyTmStr.Slc B T) ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ)) !}) 
-                {!   !} {!   !}
 
     NeededSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
                 → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
@@ -229,81 +264,6 @@ module BSystemToDepPoly where
 
     -- -- --
 
-    -- -- -- Converting Substitutions
-     
-    -- gets way more complex without the rewrite
-    SubstToHomHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                    {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                    {f : B ↝ (CtxToTyTmStr AS Γ)}
-                    {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                    (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-                    → (TopTyTm (CtxPToCtxB BS Δ')) ↝ (TopTyTm (CtxPToCtxB (CtxToBSys AS Γ) Γ'))
-    SubstToHomHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● _) = (wkCtxt (CtxToPreSys AS Γ) (CtxPToCtxB (CtxToBSys AS Γ) Γ')) ○ f
-    SubstToHomHelp {AS = AS} {BS = BS} {Γ = Γ} (cns Γ' T' t Γ'' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T') Δ') ↝ (TopTyTm++BSys (CtxToBSys AS Γ) Γ' Γ'' i)))
-                    (SubstToHomHelp ɣ)
 
-
-    SubstToHom : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
-                    {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
-                    → (TopTyTm (CtxPToCtxB BS Δ)) ↝ (TopTyTm (CtxPToCtxB BS Γ))
-    SubstToHom {Bᵇ = Bᵇ} {BS = BS} {Γ = Γ} (● Γ) = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
-    SubstToHom {BS = BS} (cns Γ T t Γ' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ')) ↝ (TopTyTm++BSys BS Γ Γ' i)) (SubstToHomHelp ɣ)
-
-    SubstToHomEqTm : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
-                        (f : B ↝ (CtxToTyTmStr AS Γ))
-                        (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ)))
-                        (x : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')))
-                        (T : TyTmStr.Typ B)
-                        → PathP (λ i → (TyTmStr.Tm (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjCompf (CtxToBSys AS Γ) Γ' x f i) T)) → (TyTmStr.Slc B T) ↝ (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i)) 
-                            (λ t → ((NeededSubstGen (CtxToBSys AS Γ) BS (Γ' ++ x) (TerminalProj (CtxToBSys AS Γ) (Γ' ++ x) ○ f) T t))) 
-                            (λ t → ((NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') BS x (TerminalProj (CtxToBSys (CtxToBSys AS Γ) Γ') x ○ (wkCtxt (CtxToPreSys AS Γ) (CtxPToCtxB (CtxToBSys AS Γ) Γ') ○ f)) T t)))
-    SubstToHomEqTm AS BS Γ f Γ' x T i x₁ = (PreBSystem.sub (PreSys++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjCompf (CtxToBSys AS Γ) Γ' x f i) T) x₁) ○
-                        (_↝_.Slc↝ (TerminalProjCompf (CtxToBSys AS Γ) Γ' x f i) T) 
-
-    SubstToHomEqHelpPoly :{A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
-                        (f : B ↝ (CtxToTyTmStr AS Γ))
-                        (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ)))
-                        (x : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ) Γ')))
-                        (T : TyTmStr.Typ B)
-                        → PathP (λ i → (TyTmStr.Tm (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjCompf (CtxToBSys AS Γ) Γ' x f i) T)) → DepPoly (++-ceil Γ' x i) (BSystemToTyStr (BSystem.BSlc BS T))) 
-                            (λ t → (BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc BS T) (Γ' ++ x) (NeededSubstGen (CtxToBSys AS Γ) BS (Γ' ++ x) (TerminalProj (CtxToBSys AS Γ) (Γ' ++ x) ○ f) T t)))
-                            λ t → (BSystemToDepPolyHelp (CtxToBSys (CtxToBSys AS Γ) Γ') (BSystem.BSlc BS T) x (NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') BS x 
-                            (TerminalProj (CtxToBSys (CtxToBSys AS Γ) Γ') x ○ (wkCtxt (CtxToPreSys AS Γ) (CtxPToCtxB (CtxToBSys AS Γ) Γ') ○ f))T t))
-    SubstToHomEqHelpPoly AS BS Γ f Γ' x T i x₁ .Tm Γ'' T' = TyTmStr.Tm ((CtxToTyBSys++Eq (CtxToBSys AS Γ) Γ' x i) Γ'')
-                        (_↝_.Ty↝ ((TerminalProjCeil (CtxToBSys AS Γ) Γ' x i Γ'') ○ (SubstToHomEqTm AS BS Γ f Γ' x T i x₁)) T')
-    SubstToHomEqHelpPoly AS BS Γ f Γ' x T i x₁ .⇑ {Γ''} {T'} t = {!   SubstToHomEqTm (CtxToBSys AS Γ) (BSystem.BSlc BS T)  !}
-
-    
-    -- (SubstToHomEqTm AS BS Γ f Γ' x T i x₁)
-    -- BSystemToDepPolyHelpEq (CtxToBSys AS Γ) (BSystem.BSlc (BSystem.BSlc BS T) T') Γ' x i Γ''
-    -- (_↝_.Ty↝ (TerminalProjCeil (CtxToBSys AS Γ) Γ' x i Γ''))
-    -- TyTmStr.Tm ((CtxToTyBSys++Eq (CtxToBSys AS Γ) Γ' x i) Γ'')
-    -- TerminalProj (BSys++Eq (CtxToBSys AS Γ) Γ' x i)
-    -- _↝_.Ty↝ (SubstToHomEqTm AS BS Γ f Γ' x T i x₁) T'
-
-    -- NeededSubstGen (CtxToBSys AS Γ) BS (Γ' ++ x) ((TerminalProj (CtxToBSys AS Γ) (Γ' ++ x)) ○ f) T
-
-    -- SubstToHomEqHelpPoly (CtxToBSys AS Γ) (BSystem.BSlc BS T) (Γ' ++ x)
-
-
-    SubstToHomEqHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
-                        {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
-                        {f : B ↝ (CtxToTyTmStr AS Γ)}
-                        {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                        (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
-                        → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp (CtxToBSys AS Γ) (CtxToBSys BS Δ') Γ' (SubstToHomHelp ɣ)) 
-    SubstToHomEqHelp {AS = AS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .Tm x T = TyTmStr.Tm (TyTmStr++Eq (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ (TerminalProjComp (CtxToBSys AS Γ) Γ' x i) (_↝_.Ty↝ f T)) 
-    SubstToHomEqHelp {AS = AS} {BS = BS} {Γ = Γ} {f = f} {Γ' = Γ'} (● Γ') i .⇑ {x} {T} t = {!     !}  
-    SubstToHomEqHelp (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomEqHelp ɣ  !}
-
-
-    -- SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
-    --                     {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
-    --                     → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp BS (CtxToBSys BS Δ) Γ (SubstToHom ɣ))
-    -- SubstToHomEq1 (● _) i .Tm x x₁ = {!   !}
-    -- SubstToHomEq1 (● _) i .⇑ t = {!   !}
-    -- SubstToHomEq1 (cns Γ T t Γ' Δ' ɣ) = {!  SubstToHomEqHelp ɣ !}
 
 

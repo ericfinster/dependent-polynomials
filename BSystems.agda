@@ -173,6 +173,7 @@ module BSystems where
   wkCtxt {B} Bᵇ ε = idStr B
   wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
 
+
   SlcHomCtxt : {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Γ : Ctxt A) (f : A ↝ B) → ((TopTyTm Γ) ↝ (TopTyTm (AppCtxt Γ f)))
   SlcHomCtxt Aᵇ Bᵇ ε f = f
   SlcHomCtxt Aᵇ Bᵇ (T ⊳ Γ) f = SlcHomCtxt (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ (Slc↝ f T) 
@@ -185,24 +186,49 @@ module BSystems where
   TopPre Bᵇ ε = Bᵇ
   TopPre Bᵇ (T ⊳ Γ) = TopPre (slc Bᵇ T) Γ
 
-  record is-homomorphism (A B : TyTmStr) (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (ϕ : A ↝ B) : Type where
+  -- record is-homomorphism2 (A B : TyTmStr) (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (ϕ : A ↝ B) : Type where
+  --   coinductive
+  --   field
+  --     wk≡Ty : (T U : Typ A) → Ty↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) U) ≡ Ty↝ (wk Bᵇ (ϕ .Ty↝ T)) (Ty↝ ϕ U)
+  --     -- Does this need to be a PathP?
+  --     wk≡Tm : (T : Typ A) → (t : Tm A T) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (Tm↝ (wk Aᵇ T) T t)) 
+  --         ≡ transport (λ i → (Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i)))) (Tm↝ (wk Bᵇ (Ty↝ ϕ T)) (Ty↝ ϕ T) (Tm↝ ϕ T t)) 
+  --     sub≡Ty : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → Ty↝ ϕ (Ty↝ (sub Aᵇ T t) U) 
+  --         ≡ Ty↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U)
+  --     -- Does this need to be a PathP? Turning these into PathPs would allow to prove actual equalities
+  --     sub≡Tm : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → (u : Tm (Slc A T) U) 
+  --         → Tm↝ ϕ (Ty↝ (sub Aᵇ T t) U) (Tm↝ (sub Aᵇ T t) U u)
+  --         ≡ transport (λ i → Tm B (sub≡Ty T t U (~ i)))
+  --         (Tm↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U) (Tm↝ (Slc↝ ϕ T) U u))
+  --     var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i))) (var Bᵇ (Ty↝ ϕ T)) 
+  --     SlcHomomorphism : (T : Typ A) → is-homomorphism2 (Slc A T) (Slc B (Ty↝ ϕ T)) (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T) -- not in BSystemsRewrite, but I'm pretty sure one needs this
+
+  record is-homomorphism {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (ϕ : A ↝ B) : Type where
     coinductive
     field
-      wk≡Ty : (T U : Typ A) → Ty↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) U) ≡ Ty↝ (wk Bᵇ (ϕ .Ty↝ T)) (Ty↝ ϕ U)
-      -- Does this need to be a PathP?
-      wk≡Tm : (T : Typ A) → (t : Tm A T) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (Tm↝ (wk Aᵇ T) T t)) 
-          ≡ transport (λ i → (Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i)))) (Tm↝ (wk Bᵇ (Ty↝ ϕ T)) (Ty↝ ϕ T) (Tm↝ ϕ T t)) 
-      sub≡Ty : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → Ty↝ ϕ (Ty↝ (sub Aᵇ T t) U) 
-          ≡ Ty↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U)
-      -- Does this need to be a PathP?
-      sub≡Tm : (T : Typ A) → (t : Tm A T) → (U : Typ (Slc A T)) → (u : Tm (Slc A T) U) 
-          → Tm↝ ϕ (Ty↝ (sub Aᵇ T t) U) (Tm↝ (sub Aᵇ T t) U u)
-          ≡ transport (λ i → Tm B (sub≡Ty T t U (~ i)))
-          (Tm↝ (sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) (Ty↝ (Slc↝ ϕ T) U) (Tm↝ (Slc↝ ϕ T) U u))
-      var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (wk≡Ty T T (~ i))) (var Bᵇ (Ty↝ ϕ T)) 
-      SlcHomomorphism : (T : Typ A) → is-homomorphism (Slc A T) (Slc B (Ty↝ ϕ T)) (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T) -- not in BSystemsRewrite, but I'm pretty sure one needs this
+      wk≡ :  (T : Typ A) → ((Slc↝ ϕ T) ○ (wk Aᵇ T)) ≡ (wk Bᵇ (ϕ .Ty↝ T)) ○ ϕ
+      sub≡ : (T : Typ A) → (t : Tm A T) → (ϕ ○ (sub Aᵇ T t)) ≡ ((sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) ○ (Slc↝ ϕ T))
+      var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (~ i)) T)) (var Bᵇ (Ty↝ ϕ T))
+      SlcHomomorphism : (T : Typ A) → is-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T)
+  
+  open is-homomorphism
 
-  -- -- -- Substitutions (I'm quite certain that this is wrong)
+  wkCtxtCommutes : {B C : TyTmStr} (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (Γ : Ctxt B) (f : B ↝ C)
+    (H : is-homomorphism Bᵇ Cᵇ f)
+    → ((SlcHomCtxt Bᵇ Cᵇ Γ f) ○ (wkCtxt Bᵇ Γ)) ≡ ((wkCtxt Cᵇ (AppCtxt Γ f)) ○ f)
+  wkCtxtCommutes Bᵇ Cᵇ ε f H = (IdStrRN f) ∙ (sym (IdStrLN f))
+  wkCtxtCommutes Bᵇ Cᵇ (T ⊳ Γ) f H = (SlcHomCtxt (slc Bᵇ T) (slc Cᵇ (Ty↝ f T)) Γ (Slc↝ f T) ○ (wkCtxt (slc Bᵇ T) Γ ○ wk Bᵇ T))
+      ≡⟨ sym (○-assoc (SlcHomCtxt (slc Bᵇ T) (slc Cᵇ (Ty↝ f T)) Γ (Slc↝ f T)) (wkCtxt (slc Bᵇ T) Γ) (wk Bᵇ T)) ⟩
+        ((SlcHomCtxt (slc Bᵇ T) (slc Cᵇ (Ty↝ f T)) Γ (Slc↝ f T) ○ (wkCtxt (slc Bᵇ T) Γ)) ○ wk Bᵇ T)
+      ≡⟨ (cong (λ x → x ○ (wk Bᵇ T)) (wkCtxtCommutes (slc Bᵇ T) (slc Cᵇ (Ty↝ f T)) Γ (Slc↝ f T) (SlcHomomorphism H T))) ⟩
+        ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ (Slc↝ f T)) ○ (wk Bᵇ T))
+      ≡⟨ (○-assoc (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T))) (Slc↝ f T) (wk Bᵇ T)) ⟩
+        (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ ((Slc↝ f T) ○ (wk Bᵇ T)))
+      ≡⟨ cong (λ x → ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)))) ○ x) (wk≡ H T) ⟩
+        (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ (wk Cᵇ (Ty↝ f T) ○ f))
+      ≡⟨ sym (○-assoc (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T))) (wk Cᵇ (Ty↝ f T)) f) ⟩
+        ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ wk Cᵇ (Ty↝ f T)) ○ f)
+      ∎ 
 
   -- this should basically be substitution, though I would like to turn this into a morphism somehow
   data ListOfTerms {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
@@ -222,7 +248,9 @@ module BSystems where
   -- TerminalSubst Bᵇ ε = e
   -- TerminalSubst Bᵇ (T ⊳ Γ) = {! var Bᵇ T  !}
 
-  {-# TERMINATING #-} -- this should hopefully be fixable but we leave it in here to test the idea
+ -- {-# TERMINATING #-} -- this should hopefully be fixable but we leave it in here to test the idea
+
+  {-
   SubstCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → (Ctxt B)
   SubstCtxt Bᵇ ε e = ε
   SubstCtxt Bᵇ Γ (cnsTy T Γ' L) = T ⊳ (SubstCtxt (slc Bᵇ T) Γ' L)
@@ -247,7 +275,7 @@ module BSystems where
   conSubst Bᵇ Γ (cnsTm T t Γ' σ) ɣ = cnsTm T t Γ' σ
 
   -- one would probably need an equality between the target context of the composition and the original second target context
-
+-}
   -- {-# TERMINATING #-}
   -- SubstFun : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → ((TopTyTm Γ) ↝ (TopTyTm (SubstCtxt Bᵇ Γ L)))
   -- SubstFun {B} Bᵇ Γ e = idStr B
@@ -257,7 +285,7 @@ module BSystems where
   -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {! idStr (Slc (TopTyTm Γ') T')   !}
 
   -- -- next try for substitutions
-
+{-}
   data BSubst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
     ϵ : BSubst Bᵇ ε
     _►_ : {T : Typ B} {Γ : Ctxt (Slc B T)}
@@ -280,7 +308,7 @@ module BSystems where
   NonDepBSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) → Ctxt B → Ctxt B → Type 
   NonDepBSubst Bᵇ Γ Δ = BSubst' Bᵇ Γ (AppCtxt Δ (wkCtxt Bᵇ Γ))
 
-
+-}
 {-
   interleaved mutual
 
@@ -306,8 +334,8 @@ module BSystems where
   record BSystem (A : TyTmStr) (Aᵇ : PreBSystem A) : Type where
     coinductive
     field
-      wk-is-homomorphism : (T : Typ A) → is-homomorphism A (Slc A T) Aᵇ (slc Aᵇ T) (wk Aᵇ T) 
-      sub-is-homomorphism : (T : Typ A) → (t : Tm A T) → is-homomorphism (Slc A T) A (slc Aᵇ T) Aᵇ (sub Aᵇ T t)
+      wk-is-homomorphism : (T : Typ A) → is-homomorphism Aᵇ (slc Aᵇ T) (wk Aᵇ T) 
+      sub-is-homomorphism : (T : Typ A) → (t : Tm A T) → is-homomorphism  (slc Aᵇ T) Aᵇ (sub Aᵇ T t)
       sub-of-wk-Tm : {T : Typ A} (t : Tm A T) → ((sub Aᵇ T t) ○ (wk Aᵇ T)) ≡ (idStr A)
       sub-of-wk-Typ : (T : Typ A) → ((sub (slc Aᵇ T) (Ty↝ (Aᵇ .wk T) T) (var Aᵇ T)) ○ (Slc↝ (wk Aᵇ T)) T) ≡ (idStr (Slc A T))
       Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
