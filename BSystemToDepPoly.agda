@@ -122,38 +122,21 @@ module BSystemToDepPoly where
     AppTerminalProj BS CS Γ f = TerminalProj CS (AppCtx BS CS Γ f)
 
     HelperEq : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
-                (f : B ↝ C) 
-                → (CtxToTyTmStr BS Γ ↝ (CtxToTyTmStr CS (AppCtx BS CS Γ f))) ≡ (CtxToTyTmStr BS Γ ↝ (TopTyTm (AppCtxt (CtxPToCtxB BS Γ) f)))
-    HelperEq BS CS ϵ f = refl
-    HelperEq BS CS (T ► Γ) f = cong (λ x → (CtxToTyTmStr BS (T ► Γ) ↝ (TopTyTm x))) (rInv (BSystem.BSlc CS (_↝_.Ty↝ f T)) (AppCtxt (CtxPToCtxB (BSystem.BSlc BS T) Γ) (_↝_.Slc↝ f T)))
-
-        -- cong (λ x → TopTyTm x) (rInv (BSystem.BSlc CS (_↝_.Ty↝ f T)) (AppCtxt (CtxPToCtxB (BSystem.BSlc BS T) Γ) (_↝_.Slc↝ f T)))
+                (f : B ↝ C)
+                → PathP (λ i → ((cong (λ x → (B ↝ TopTyTm x)) (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f))) i)) (AppTerminalProj BS CS Γ f ○ f) ((wkCtxt Cᵇ (AppCtxt (CtxPToCtxB BS Γ) f) ○ f))
+    HelperEq {Cᵇ = Cᵇ} BS CS Γ f i = wkCtxt Cᵇ (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f) i) ○ f
 
     TerminalProjCommutes : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
                 (f : B ↝ C) (H : is-homomorphism Bᵇ Cᵇ f)
-                → (AppTerminalProj BS CS Γ f ○ f) 
-                ≡ (transport (λ i → (HelperEq BS CS Γ f (~ i))) (SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f)
-                ○ TerminalProj BS Γ)
-    TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = {! wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f   !} 
-                
-                -- -- (sym (transportRefl (f ○ TerminalProj BS ϵ)))       (sym (IdStrLN f))
-                --  transport  (λ i → (CtxToTyTmStr CS (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f) (~ i))))
-                -- (SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) 
-                -- _∙_
+                → PathP (λ i → ((cong (λ x → (B ↝ TopTyTm x)) (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f))) i)) ((AppTerminalProj BS CS Γ f) ○ f) 
+                        (((SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) ○ TerminalProj BS Γ))  
+    TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = (HelperEq BS CS Γ f) ▷ (sym (wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f H)) 
+        
 
     TerminalProjCeil : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP (λ i → (φ : Ctx (++-ceil Γ Γ' i)) → (TyTmStr++Eq BS Γ Γ' i) ↝ (CtxToTyBSys++Eq BS Γ Γ' i φ)) (λ φ → (TerminalProj (CtxToBSys BS (Γ ++ Γ')) φ)) λ φ → (TerminalProj (CtxToBSys (CtxToBSys BS Γ) Γ') φ)
     TerminalProjCeil BS ϵ Γ' = refl
     TerminalProjCeil BS (T ► Γ) Γ' = TerminalProjCeil (BSystem.BSlc BS T) Γ Γ'
-
-        {-
-                Since my original idea of using naturality to move all the sub applications down through NeededSubstGen won't work
-                since we don't necessarily have a preimage for every term, we now need to move the Delta Projection up though the final morphism
-                and then do the same to the substitutions to finally then be able to show that these cancel out and we're left with just the
-                terminal projection of Gamma
-                Therefore we first need to be able to show that terminal projections commute with homomrphisms and then start on the rest,
-                by redefining the substitution projections in a more usable way
-        -}
 
     TerminalProjComp : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP  (λ i → (B ↝ (TyTmStr++Eq BS Γ Γ' i))) (TerminalProj BS (Γ ++ Γ')) 
@@ -196,6 +179,27 @@ module BSystemToDepPoly where
             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T))
             → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ))
     NeededSubstGen AS BS Γ f T t = (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (_↝_.Slc↝ f T)
+
+    NeededSubstGenTriv : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
+            (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
+            → (NeededSubstGen AS BS Γ f T t) ○ (PreBSystem.wk Bᵇ T) ≡ f
+    NeededSubstGenTriv {Bᵇ = Bᵇ} AS BS Γ f T t H = ((PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (_↝_.Slc↝ f T)) ○ (PreBSystem.wk Bᵇ T)
+        ≡⟨ ○-assoc (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) (_↝_.Slc↝ f T) (PreBSystem.wk Bᵇ T) ⟩
+                (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ ((_↝_.Slc↝ f T) ○ (PreBSystem.wk Bᵇ T))
+        ≡⟨ cong (λ x → (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ x) (is-homomorphism.wk≡ H T) ⟩
+                (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ ((PreBSystem.wk (CtxToPreSys AS Γ) (_↝_.Ty↝ f T)) ○ f)
+        ≡⟨ sym (○-assoc (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) (PreBSystem.wk (CtxToPreSys AS Γ) (_↝_.Ty↝ f T)) f) ⟩ 
+                ((PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (PreBSystem.wk (CtxToPreSys AS Γ) (_↝_.Ty↝ f T))) ○ f
+        ≡⟨ cong (λ x → x ○ f) (BSystem.sub-of-wk-Tm (CtxToBSys AS Γ) t) ⟩
+                (idStr (CtxToTyTmStr AS Γ)) ○ f
+        ≡⟨ IdStrLN f ⟩
+                f      
+        ∎
+
+--                  ≡⟨ sym (○-assoc (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T))) (wk Cᵇ (Ty↝ f T)) f) ⟩
+--         ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ wk Cᵇ (Ty↝ f T)) ○ f)
+--       ∎ 
+  
 
 --     NeededSubstGenEqBSys : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
 --             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) (H : (is-homomorphism Bᵇ (CtxToPreSys AS Γ) f))

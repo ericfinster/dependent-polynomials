@@ -9,21 +9,26 @@ open import DepPoly
 open import Monad
 open import BSystems
 open import BSystemToDepPoly
+open import ConvertingSubstitutions
 
 module BSystemToMonad where
 
+    -- Eq3Help : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)(T : TyTmStr.Typ B) (fst₁ : Ctx (BSystemToTyStr BS)) (Γ : Ctx (BSystemToTyStr BS)) 
+    --      (fst₂ : Subst (BSystemToDepPoly BS) Γ fst₁)
+    --      → {! (CtxToBSys BS fst₁) () (SubstToHom fst₂)   !}
+
         -- this should be justified by the naturality of sub
-    Eq3 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)(T : TyTmStr.Typ B) (fst₁ : Ctx (BSystemToTyStr BS)) (Γ : Ctx (BSystemToTyStr BS)) 
+    Eq3 : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (fst₁ : Ctx (BSystemToTyStr BS)) (Γ : Ctx (BSystemToTyStr BS)) 
          (fst₂ : Subst (BSystemToDepPoly BS) Γ fst₁)
-         → ( _↝_.Ty↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T)) ≡ (_↝_.Ty↝ (TerminalProj BS Γ) T)
-    Eq3 BS T fst₁ Γ (● .Γ) = refl
-    Eq3 BS T fst₁ Γ (cns Γ₁ T₁ t Γ' Δ' fst₂) = {! Eq3 BS T (T₁ ► Δ') (Γ₁ ++ Γ')    !}
+         → ((SubstToHom fst₂) ○ (TerminalProj BS fst₁)) ≡ (TerminalProj BS Γ) 
+    Eq3 {Bᵇ = Bᵇ} BS fst₁ Γ (● .Γ) = IdStrRN (wkCtxt Bᵇ (CtxPToCtxB BS Γ))
+    Eq3 BS fst₁ Γ (cns Γ₁ T t Γ' Δ' fst₂) = {!   !}
         
 
     -- BSystemToMonad-μHelp : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} ()
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
-    BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (Eq3 BS T fst₁ Γ fst₂ i))) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
+    BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T))) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
     BSystemToMonad-μ BS .⇑⇒ (fst₁ , fst₂ , snd₁) = {!   !}
     -- needs Basically BSystemToMonad for two BSystemToDepPolyHelp with codomain1 matching domain2
     -- it seems like agda wont reduce ⌈ fst₂ ⌉s to something which basically equals a repeated application of BSystemToDepPolyHelp which would make the help function kind of more involved

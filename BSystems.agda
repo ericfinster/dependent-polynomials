@@ -208,7 +208,8 @@ module BSystems where
     field
       wk≡ :  (T : Typ A) → ((Slc↝ ϕ T) ○ (wk Aᵇ T)) ≡ (wk Bᵇ (ϕ .Ty↝ T)) ○ ϕ
       sub≡ : (T : Typ A) → (t : Tm A T) → (ϕ ○ (sub Aᵇ T t)) ≡ ((sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) ○ (Slc↝ ϕ T))
-      var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (~ i)) T)) (var Bᵇ (Ty↝ ϕ T))
+      -- var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (~ i)) T)) (var Bᵇ (Ty↝ ϕ T)) I should check if this is actually equal to the PathP
+      var≡ : (T : Typ A) → PathP ((λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (i)) T))) ((Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ((var Bᵇ (Ty↝ ϕ T)))
       SlcHomomorphism : (T : Typ A) → is-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T)
   
   open is-homomorphism
@@ -229,6 +230,39 @@ module BSystems where
       ≡⟨ sym (○-assoc (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T))) (wk Cᵇ (Ty↝ f T)) f) ⟩
         ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ wk Cᵇ (Ty↝ f T)) ○ f)
       ∎ 
+  
+  postulate
+    
+    ○-homomorphism : {A B C : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (f : A ↝ B) (g : B ↝ C)
+          (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g)
+          → is-homomorphism Aᵇ Cᵇ (g ○ f)
+  -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .wk≡ T = ((Slc↝ g (Ty↝ f T) ○ Slc↝ f T) ○ wk Aᵇ T) 
+  --     ≡⟨ ○-assoc (Slc↝ g (Ty↝ f T)) (Slc↝ f T) (wk Aᵇ T) ⟩
+  --       (Slc↝ g (Ty↝ f T) ○ (Slc↝ f T ○ wk Aᵇ T))
+  --     ≡⟨ cong (λ x → (Slc↝ g (Ty↝ f T)) ○ x) (wk≡ Hf T) ⟩
+  --       (Slc↝ g (Ty↝ f T)) ○ ((wk Bᵇ (Ty↝ f T)) ○ f)
+  --     ≡⟨ sym (○-assoc (Slc↝ g (Ty↝ f T)) (wk Bᵇ (Ty↝ f T)) f) ⟩
+  --       ((Slc↝ g (Ty↝ f T)) ○ (wk Bᵇ (Ty↝ f T))) ○ f
+  --     ≡⟨ cong (λ x → x ○ f) (wk≡ Hg (Ty↝ f T)) ⟩
+  --       ((wk Cᵇ (Ty↝ g (Ty↝ f T))) ○ g) ○ f
+  --     ≡⟨ ○-assoc (wk Cᵇ (Ty↝ g (Ty↝ f T))) g f ⟩
+  --       (wk Cᵇ (Ty↝ g (Ty↝ f T))) ○ (g ○ f)
+  --     ∎
+  -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .sub≡ T t = (g ○ f) ○ sub Aᵇ T t
+  --     ≡⟨ ○-assoc g f (sub Aᵇ T t) ⟩
+  --       g ○ (f ○ sub Aᵇ T t)
+  --     ≡⟨ cong (λ x → g ○ x) (sub≡ Hf T t) ⟩
+  --       g ○ ((sub Bᵇ (Ty↝ f T) (Tm↝ f T t)) ○ (Slc↝ f T))
+  --     ≡⟨ sym (○-assoc g (sub Bᵇ (Ty↝ f T) (Tm↝ f T t)) (Slc↝ f T)) ⟩
+  --       (g ○ (sub Bᵇ (Ty↝ f T) (Tm↝ f T t))) ○ (Slc↝ f T)
+  --     ≡⟨ cong (λ x → x ○ (Slc↝ f T)) (sub≡ Hg (Ty↝ f T) (Tm↝ f T t)) ⟩ 
+  --       ((sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) ○ (Slc↝ g (Ty↝ f T))) ○ (Slc↝ f T)
+  --     ≡⟨ ○-assoc (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) (Slc↝ g (Ty↝ f T)) (Slc↝ f T) ⟩
+  --       (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) ○ ((Slc↝ g (Ty↝ f T)) ○ (Slc↝ f T))
+  --     ∎
+  -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .var≡ T = {! congP (λ i → (λ x → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (Slc↝ f T) (Ty↝ (wk Aᵇ T) T)) x)))   !} -- var≡ Hg (Ty↝ f T)   var≡ Hf T
+  -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .SlcHomomorphism T = ○-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) (slc Cᵇ (Ty↝ g (Ty↝ f T))) (Slc↝ f T) (Slc↝ g (Ty↝ f T)) 
+  --     (SlcHomomorphism Hf T) (SlcHomomorphism Hg (Ty↝ f T))
 
   -- this should basically be substitution, though I would like to turn this into a morphism somehow
   data ListOfTerms {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where

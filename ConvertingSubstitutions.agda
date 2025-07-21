@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Cubical.Foundations.Prelude
 
 open import TyStr
