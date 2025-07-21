@@ -173,10 +173,13 @@ module BSystems where
   wkCtxt {B} Bᵇ ε = idStr B
   wkCtxt Bᵇ (T ⊳ Γ) = (wkCtxt (slc Bᵇ T) Γ) ○ (wk Bᵇ T)
 
+  -- AppCtxtWk : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) (Γ : Ctxt (Slc B T)) → wkCtxt (slc Bᵇ T) Γ ≡ {! wkCtxt (slc Bᵇ T) (AppCtxt (T ⊳ Γ) (wk Bᵇ T))  !}
+
 
   SlcHomCtxt : {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Γ : Ctxt A) (f : A ↝ B) → ((TopTyTm Γ) ↝ (TopTyTm (AppCtxt Γ f)))
   SlcHomCtxt Aᵇ Bᵇ ε f = f
   SlcHomCtxt Aᵇ Bᵇ (T ⊳ Γ) f = SlcHomCtxt (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ (Slc↝ f T) 
+
 
   -- -- -- 
   
@@ -213,6 +216,23 @@ module BSystems where
       SlcHomomorphism : (T : Typ A) → is-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T)
   
   open is-homomorphism
+  postulate
+
+    IdIsHomomorphism : {B : TyTmStr} (Bᵇ : PreBSystem B) → is-homomorphism Bᵇ Bᵇ (idStr B)
+  -- IdIsHomomorphism {B} Bᵇ .wk≡ T = (idStr (Slc B T) ○ wk Bᵇ T)
+  --     ≡⟨ IdStrLN (wk Bᵇ T) ⟩
+  --       wk Bᵇ T
+  --     ≡⟨ sym (IdStrRN (wk Bᵇ T)) ⟩
+  --         wk Bᵇ T ○ idStr B
+  --     ∎
+  -- IdIsHomomorphism {B} Bᵇ .sub≡ T t = (idStr B ○ sub Bᵇ T t)
+  --     ≡⟨ IdStrLN (sub Bᵇ T t) ⟩
+  --       sub Bᵇ T t
+  --     ≡⟨ sym (IdStrRN (sub Bᵇ T t)) ⟩
+  --       sub Bᵇ T t ○ idStr (Slc B T)   
+  --     ∎
+  -- IdIsHomomorphism Bᵇ .var≡ T i = {! refl {x = var Bᵇ T} i   !}
+  -- IdIsHomomorphism Bᵇ .SlcHomomorphism T = IdIsHomomorphism (slc Bᵇ T) 
 
   wkCtxtCommutes : {B C : TyTmStr} (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (Γ : Ctxt B) (f : B ↝ C)
     (H : is-homomorphism Bᵇ Cᵇ f)
@@ -233,7 +253,7 @@ module BSystems where
   
   postulate
     
-    ○-homomorphism : {A B C : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (f : A ↝ B) (g : B ↝ C)
+    ○-homomorphism : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
           (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g)
           → is-homomorphism Aᵇ Cᵇ (g ○ f)
   -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .wk≡ T = ((Slc↝ g (Ty↝ f T) ○ Slc↝ f T) ○ wk Aᵇ T) 
@@ -374,3 +394,10 @@ module BSystems where
       sub-of-wk-Typ : (T : Typ A) → ((sub (slc Aᵇ T) (Ty↝ (Aᵇ .wk T) T) (var Aᵇ T)) ○ (Slc↝ (wk Aᵇ T)) T) ≡ (idStr (Slc A T))
       Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
       BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
+  
+  open BSystem
+
+
+  WkCtxtSort : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : Typ B) → (wk (slc Bᵇ T) (Ty↝ (wk Bᵇ T) T)) ○ (wk Bᵇ T) ≡ ((Slc↝ (wk Bᵇ T) T) ○ (wk Bᵇ T))
+  WkCtxtSort BS T = sym (wk≡ (wk-is-homomorphism BS T) T)
+

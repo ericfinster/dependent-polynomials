@@ -1,6 +1,6 @@
-{-# OPTIONS --no-termination-check --no-positivity-check #-}
 
--- {-# OPTIONS --allow-unsolved-metas #-}
+
+{-# OPTIONS --allow-unsolved-metas #-}
 
 open import Cubical.Foundations.Prelude
 
@@ -117,6 +117,10 @@ module BSystemToDepPoly where
     TerminalProj : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → B ↝ (CtxToTyTmStr BS Γ)
     TerminalProj {Bᵇ = Bᵇ} BS Γ = wkCtxt Bᵇ (CtxPToCtxB BS Γ)
 
+    TerProjIsHomomorphism : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → is-homomorphism Bᵇ (CtxToPreSys BS Γ) (TerminalProj BS Γ)
+    TerProjIsHomomorphism {Bᵇ = Bᵇ} BS ϵ = IdIsHomomorphism Bᵇ
+    TerProjIsHomomorphism {Bᵇ = Bᵇ} BS (T ► Γ) = ○-homomorphism (BSystem.wk-is-homomorphism BS T) (TerProjIsHomomorphism (BSystem.BSlc BS T) Γ) 
+
     AppTerminalProj : {B C : TyTmStr} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
                 (f : B ↝ C) → C ↝ CtxToTyTmStr CS (AppCtx  BS CS Γ f)
     AppTerminalProj BS CS Γ f = TerminalProj CS (AppCtx BS CS Γ f)
@@ -131,6 +135,10 @@ module BSystemToDepPoly where
                 → PathP (λ i → ((cong (λ x → (B ↝ TopTyTm x)) (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f))) i)) ((AppTerminalProj BS CS Γ f) ○ f) 
                         (((SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) ○ TerminalProj BS Γ))  
     TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = (HelperEq BS CS Γ f) ▷ (sym (wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f H)) 
+
+    TerminalProjSlc : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T))) 
+                → (TerminalProj (BSystem.BSlc BS T) Γ) ≡ {! (AppTerminalProj BS (BSystem.BSlc BS T) (T ► Γ) (PreBSystem.wk Bᵇ T))   !}
+    TerminalProjSlc = {!   !}
         
 
     TerminalProjCeil : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
@@ -196,6 +204,12 @@ module BSystemToDepPoly where
                 f      
         ∎
 
+    NeededSubstGenIsHomomorphism : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
+            (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) 
+            (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
+            → is-homomorphism (PreBSystem.slc Bᵇ T) (CtxToPreSys AS Γ) (NeededSubstGen AS BS Γ f T t)
+    NeededSubstGenIsHomomorphism AS BS Γ f T t H = ○-homomorphism (is-homomorphism.SlcHomomorphism H T) (BSystem.sub-is-homomorphism (CtxToBSys AS Γ) (_↝_.Ty↝ f T) t)
+
 --                  ≡⟨ sym (○-assoc (wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T))) (wk Cᵇ (Ty↝ f T)) f) ⟩
 --         ((wkCtxt (slc Cᵇ (Ty↝ f T)) (AppCtxt Γ (Slc↝ f T)) ○ wk Cᵇ (Ty↝ f T)) ○ f)
 --       ∎ 
@@ -210,7 +224,16 @@ module BSystemToDepPoly where
     NeededSubst : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
                 → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr BS Γ))
     NeededSubst BS Γ T t = NeededSubstGen BS BS Γ (TerminalProj BS Γ) T t
-    
+
+    NeededSubstIsHomomorphism : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
+                → (is-homomorphism (PreBSystem.slc Bᵇ T) (CtxToPreSys BS Γ) (NeededSubst BS Γ T t))
+    NeededSubstIsHomomorphism BS Γ T t = NeededSubstGenIsHomomorphism BS BS Γ (TerminalProj BS Γ) T t (TerProjIsHomomorphism BS Γ)
+
+    NeededSubstTriv : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
+                → NeededSubst BS Γ T t ○ (PreBSystem.wk Bᵇ T) ≡ TerminalProj BS Γ
+    NeededSubstTriv BS Γ T t = NeededSubstGenTriv BS BS Γ (TerminalProj BS Γ) T t (TerProjIsHomomorphism BS Γ)
+
     -- Needed since when lifitng the domain and codomain BSystems diverge 
 
     {-# TERMINATING #-}
