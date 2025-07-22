@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+-- {-# OPTIONS --allow-unsolved-metas #-}
 
 open import Cubical.Foundations.Prelude
 
@@ -39,18 +39,8 @@ module ConvertingSubstitutions where
                             (λ t → ((NeededSubstGen AS BS (Γ' ++ x) (TerminalProj AS (Γ' ++ x) ○ f) T t))) 
                             (λ t → ((NeededSubstGen (CtxToBSys AS Γ') BS x (TerminalProj (CtxToBSys AS Γ') x ○ (wkCtxt Aᵇ (CtxPToCtxB AS Γ') ○ f)) T t)))
     SubstToHomEqTm AS BS f Γ' x T i x₁ = (PreBSystem.sub (PreSys++Eq AS Γ' x i) (_↝_.Ty↝ (TerminalProjCompf AS Γ' x f i) T) x₁) ○
-                        (_↝_.Slc↝ (TerminalProjCompf AS Γ' x f i) T) 
+                        (_↝_.Slc↝ (TerminalProjCompf AS Γ' x f i) T)
 
-    NeededSubstGenEq : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) 
-                (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx ⌈ Γ ⌉) (T : TyTmStr.Typ B)
-                (T' : TyTmStr.Typ (TyTmStr.Slc B T))
-                → PathP (λ i → (φ : (Ctx (++-ceil Γ Γ' i))) → (g : ((TyTmStr.Slc B T) ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))) 
-                → (t' : TyTmStr.Tm (CtxToTyBSys++Eq AS Γ Γ' i φ) (_↝_.Ty↝ g T'))
-                → ((TyTmStr.Slc (TyTmStr.Slc B T) T') ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))) 
-                (λ φ g t' → (NeededSubstGen (CtxToBSys AS (Γ ++ Γ')) (BSystem.BSlc BS T) φ g T' t')) 
-                λ φ g t' → NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') (BSystem.BSlc BS T) φ g T' t'
-    NeededSubstGenEq AS BS ϵ Γ' T T' = refl
-    NeededSubstGenEq AS BS (T₁ ► Γ) Γ' T T' = NeededSubstGenEq (BSystem.BSlc AS T₁) BS Γ Γ' T T'
 
     SubstToHomEqHelpPoly :{A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
                         (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ)  
@@ -100,10 +90,26 @@ module ConvertingSubstitutions where
         -- transport-filler (λ i₁ → (DepPoly (++-ceil Γ' x i₁) (BSystemToTyStr (BSystem.BSlc BS T))))
         -- SubstToHomEqHelpPoly AS BS Γ f Γ' x T i t 
 
-        -- somethings wrong in SubstToHomEqHelpPoly with the typing of f
+    SubstToHomEq1Hom : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                    (Γ' : Ctx (BSystemToTyStr (CtxToBSys BS Γ))) (T : TyTmStr.Typ B)
+                    → PathP (λ i → (t : TyTmStr.Tm (TyTmStr++Eq BS Γ Γ' i) (_↝_.Ty↝ (TerminalProjComp BS Γ Γ' i) T)) → (TyTmStr.Slc B T) ↝ TyTmStr++Eq BS Γ Γ' i) 
+                    (λ t → (NeededSubst BS (Γ ++ Γ') T t)) 
+                    λ t → (NeededSubstGen (CtxToBSys BS Γ) BS Γ' (TerminalProj (CtxToBSys BS Γ) Γ' ○ wkCtxt Bᵇ (CtxPToCtxB BS Γ)) T t)
+    SubstToHomEq1Hom BS Γ Γ' T i t = (PreBSystem.sub (PreSys++Eq BS Γ Γ' i) (_↝_.Ty↝ (TerminalProjComp BS Γ Γ' i) T) t) ○ (_↝_.Slc↝ (TerminalProjComp BS Γ Γ' i) T)
+
+
+    SubstToHomEq1Poly : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                    (Γ' : Ctx (BSystemToTyStr (CtxToBSys BS Γ))) (T : TyTmStr.Typ B)
+                    → PathP (λ i → (t : TyTmStr.Tm (TyTmStr++Eq BS Γ Γ' i) (_↝_.Ty↝ (TerminalProjComp BS Γ Γ' i) T)) 
+                    → DepPoly (++-ceil Γ Γ' i) ((BSystemToTyStr (BSystem.BSlc BS T)))) 
+                    (λ t → (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (Γ ++ Γ') (NeededSubst BS (Γ ++ Γ') T t))) 
+                    λ t → BSystemToDepPolyHelp (CtxToBSys BS Γ) (BSystem.BSlc BS T) Γ' 
+                        (NeededSubstGen (CtxToBSys BS Γ) BS Γ' (TerminalProj (CtxToBSys BS Γ) Γ' ○ wkCtxt Bᵇ (CtxPToCtxB BS Γ)) T t)
+    SubstToHomEq1Poly BS Γ Γ' T i t = BSystemToDepPolyHelpEqFirstStep BS Γ Γ' T i (SubstToHomEq1Hom BS Γ Γ' T i t)
+
     SubstToHomEq1 : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
                         {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
                         → ⌈ ɣ ⌉s ≡ (BSystemToDepPolyHelp BS (CtxToBSys BS Δ) Γ (SubstToHom ɣ))
     SubstToHomEq1 {BS = BS} {Γ = Γ} (● Γ) i .Tm x x₁ = TyTmStr.Tm (TyTmStr++Eq BS Γ x i) (_↝_.Ty↝ (TerminalProjComp BS Γ x i) x₁) -- TyTmStr.Tm (TyTmStr++Eq BS Γ x i)
-    SubstToHomEq1 {BS = BS} {Γ = Γ} (● Γ) i .⇑ {Γ'} {T} t = {! SubstToHomEqHelpPoly BS (BSystem.BSlc BS T)   !} -- SubstToHomEqHelpPoly BS (BSystem.BSlc BS T)
+    SubstToHomEq1 {B} {BS = BS} {Γ = Γ} (● Γ) i .⇑ {Γ'} {T} t = {!   !} -- SubstToHomEqHelpPoly BS (BSystem.BSlc BS T)
     SubstToHomEq1 (cns Γ T t Γ' Δ' ɣ) = {!  SubstToHomEqHelp ɣ !}

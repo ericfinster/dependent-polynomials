@@ -1,6 +1,6 @@
 
 
-{-# OPTIONS --allow-unsolved-metas #-}
+-- {-# OPTIONS --allow-unsolved-metas #-}
 
 open import Cubical.Foundations.Prelude
 
@@ -135,10 +135,6 @@ module BSystemToDepPoly where
                 → PathP (λ i → ((cong (λ x → (B ↝ TopTyTm x)) (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f))) i)) ((AppTerminalProj BS CS Γ f) ○ f) 
                         (((SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) ○ TerminalProj BS Γ))  
     TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = (HelperEq BS CS Γ f) ▷ (sym (wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f H)) 
-
-    TerminalProjSlc : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B) (Γ : Ctx (BSystemToTyStr (BSystem.BSlc BS T))) 
-                → (TerminalProj (BSystem.BSlc BS T) Γ) ≡ {! (AppTerminalProj BS (BSystem.BSlc BS T) (T ► Γ) (PreBSystem.wk Bᵇ T))   !}
-    TerminalProjSlc = {!   !}
         
 
     TerminalProjCeil : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
@@ -187,6 +183,17 @@ module BSystemToDepPoly where
             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T))
             → ((TyTmStr.Slc B T) ↝ (CtxToTyTmStr AS Γ))
     NeededSubstGen AS BS Γ f T t = (PreBSystem.sub (CtxToPreSys AS Γ) (_↝_.Ty↝ f T) t) ○ (_↝_.Slc↝ f T)
+
+    NeededSubstGenEq : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) 
+                (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx ⌈ Γ ⌉) (T : TyTmStr.Typ B)
+                (T' : TyTmStr.Typ (TyTmStr.Slc B T))
+                → PathP (λ i → (φ : (Ctx (++-ceil Γ Γ' i))) → (g : ((TyTmStr.Slc B T) ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))) 
+                → (t' : TyTmStr.Tm (CtxToTyBSys++Eq AS Γ Γ' i φ) (_↝_.Ty↝ g T'))
+                → ((TyTmStr.Slc (TyTmStr.Slc B T) T') ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))) 
+                (λ φ g t' → (NeededSubstGen (CtxToBSys AS (Γ ++ Γ')) (BSystem.BSlc BS T) φ g T' t')) 
+                λ φ g t' → NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') (BSystem.BSlc BS T) φ g T' t'
+    NeededSubstGenEq AS BS ϵ Γ' T T' = refl
+    NeededSubstGenEq AS BS (T₁ ► Γ) Γ' T T' = NeededSubstGenEq (BSystem.BSlc AS T₁) BS Γ Γ' T T'
 
     NeededSubstGenTriv : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
@@ -254,6 +261,17 @@ module BSystemToDepPoly where
                 λ φ g → BSystemToDepPolyHelp (CtxToBSys (CtxToBSys AS Γ) Γ') BS φ g
     BSystemToDepPolyHelpEq AS BS ϵ Γ' = refl
     BSystemToDepPolyHelpEq AS BS (T ► Γ) Γ' = BSystemToDepPolyHelpEq (BSystem.BSlc AS T) BS Γ Γ'
+
+
+        -- this seems kind of weird to me 
+    BSystemToDepPolyHelpEqFirstStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) 
+                    (Γ' : Ctx (BSystemToTyStr (CtxToBSys BS Γ))) (T : TyTmStr.Typ B)
+                    → PathP (λ i → (g : ((TyTmStr.Slc B T) ↝ (TyTmStr++Eq BS Γ Γ' i))) → DepPoly (++-ceil Γ Γ' i) (BSystemToTyStr (BSystem.BSlc BS T))) 
+                    (λ g → BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (Γ ++ Γ') g) 
+                    λ g → BSystemToDepPolyHelp (CtxToBSys BS Γ) (BSystem.BSlc BS T) Γ' g
+    BSystemToDepPolyHelpEqFirstStep BS Γ Γ' T i g .Tm Γ'' T' = TyTmStr.Tm (CtxToTyBSys++Eq BS Γ Γ' i Γ'') (_↝_.Ty↝ ((TerminalProjCeil BS Γ Γ' i Γ'') ○ g) T') 
+    BSystemToDepPolyHelpEqFirstStep BS Γ Γ' T i g .⇑ {Γ''} {T'} t = BSystemToDepPolyHelpEq BS (BSystem.BSlc (BSystem.BSlc BS T) T') Γ Γ' i Γ''  
+                (NeededSubstGenEq BS BS Γ Γ' T T' i Γ'' ((TerminalProjCeil BS Γ Γ' i Γ'') ○ g) t) 
 
 --     CtxToTyBSys++Eq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉) 
 --             → PathP (λ i → Ctx (++-ceil Γ Γ' i) → TyTmStr) (λ t → (CtxToTyTmStr (CtxToBSys BS (Γ ++ Γ')) t)) λ t → (CtxToTyTmStr (CtxToBSys (CtxToBSys BS Γ) Γ') t)
