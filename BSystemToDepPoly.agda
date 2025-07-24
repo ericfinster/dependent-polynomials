@@ -44,8 +44,7 @@ module BSystemToDepPoly where
     CtxToTyTmStr BS Γ = TopTyTm (CtxPToCtxB BS Γ)
 
     CtxToPreSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → (PreBSystem (CtxToTyTmStr BS Γ))
-    CtxToPreSys {Bᵇ = Bᵇ} BS ϵ = Bᵇ
-    CtxToPreSys BS (T ► Γ) = CtxToPreSys (BSystem.BSlc BS T) Γ
+    CtxToPreSys {Bᵇ = Bᵇ} BS Γ = TopPre Bᵇ (CtxPToCtxB BS Γ)
 
     CtxToBSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) → (BSystem (CtxToTyTmStr BS Γ) (CtxToPreSys BS Γ))
     CtxToBSys BS ϵ = BS
@@ -104,8 +103,7 @@ module BSystemToDepPoly where
 
     TopTyTm++BSys : {A : TyTmStr} {Aᵇ : PreBSystem A} (AS : BSystem A Aᵇ) (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))) 
                 → (TopTyTm (CtxPToCtxB (CtxToBSys AS Γ) Γ')) ≡ (TopTyTm (CtxPToCtxB AS (Γ ++ Γ')))
-    TopTyTm++BSys AS ϵ Γ' = refl
-    TopTyTm++BSys AS (T ► Γ) Γ' = TopTyTm++BSys (BSystem.BSlc AS T) Γ Γ'
+    TopTyTm++BSys AS Γ Γ' = sym (TyTmStr++Eq AS Γ Γ')
 
     -- this was needed since BSys++Eq is a different Path to ++-ceil so we cant then apply the TyStr resulting from that BSys to a Context along ++-ceil
     CtxToTyBSys++Eq : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉) 
@@ -134,8 +132,7 @@ module BSystemToDepPoly where
                 (f : B ↝ C) (H : is-homomorphism Bᵇ Cᵇ f)
                 → PathP (λ i → ((cong (λ x → (B ↝ TopTyTm x)) (rInv CS (AppCtxt (CtxPToCtxB BS Γ) f))) i)) ((AppTerminalProj BS CS Γ f) ○ f) 
                         (((SlcHomCtxt Bᵇ Cᵇ (CtxPToCtxB BS Γ) f) ○ TerminalProj BS Γ))  
-    TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = (HelperEq BS CS Γ f) ▷ (sym (wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f H)) 
-        
+    TerminalProjCommutes {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} BS CS Γ f H = (HelperEq BS CS Γ f) ▷ (sym (wkCtxtCommutes Bᵇ Cᵇ (CtxPToCtxB BS Γ) f H))      
 
     TerminalProjCeil : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (Γ' : Ctx ⌈ Γ ⌉)
             → PathP (λ i → (φ : Ctx (++-ceil Γ Γ' i)) → (TyTmStr++Eq BS Γ Γ' i) ↝ (CtxToTyBSys++Eq BS Γ Γ' i φ)) (λ φ → (TerminalProj (CtxToBSys BS (Γ ++ Γ')) φ)) λ φ → (TerminalProj (CtxToBSys (CtxToBSys BS Γ) Γ') φ)

@@ -284,6 +284,7 @@ module BSystems where
   -- ○-homomorphism Aᵇ Bᵇ Cᵇ f g Hf Hg .SlcHomomorphism T = ○-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) (slc Cᵇ (Ty↝ g (Ty↝ f T))) (Slc↝ f T) (Slc↝ g (Ty↝ f T)) 
   --     (SlcHomomorphism Hf T) (SlcHomomorphism Hg (Ty↝ f T))
 
+
   -- this should basically be substitution, though I would like to turn this into a morphism somehow
   data ListOfTerms {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
     e : ListOfTerms Bᵇ ε
@@ -400,4 +401,8 @@ module BSystems where
 
   WkCtxtSort : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : Typ B) → (wk (slc Bᵇ T) (Ty↝ (wk Bᵇ T) T)) ○ (wk Bᵇ T) ≡ ((Slc↝ (wk Bᵇ T) T) ○ (wk Bᵇ T))
   WkCtxtSort BS T = sym (wk≡ (wk-is-homomorphism BS T) T)
+
+  wkCtxtIsHomomorphism : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) → is-homomorphism Bᵇ (TopPre Bᵇ Γ) (wkCtxt Bᵇ Γ)
+  wkCtxtIsHomomorphism {Bᵇ = Bᵇ} BS ε = IdIsHomomorphism Bᵇ
+  wkCtxtIsHomomorphism BS (T ⊳ Γ) = ○-homomorphism (wk-is-homomorphism BS T) (wkCtxtIsHomomorphism (BSlc BS T) Γ)
 
