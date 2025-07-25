@@ -31,8 +31,8 @@ module BSystems where
   proj-Tm A B ɣ i = Tm (ɣ i)
  
 
-  proj-Slc : (A B : TyTmStr) (ɣ : A ≡ B) → PathP (λ i → Typ (ɣ i) → TyTmStr) (Slc A) (Slc B)
-  proj-Slc A B ɣ i = Slc (ɣ i)
+  proj-Slc : {A B : TyTmStr} (ɣ : A ≡ B) → PathP (λ i → Typ (ɣ i) → TyTmStr) (Slc A) (Slc B)
+  proj-Slc ɣ i = Slc (ɣ i)
 
   -- -- --
 
@@ -110,14 +110,14 @@ module BSystems where
      field
        Ty-eq : (T : Typ A) → (PathP (λ i → (Typ (ɣ i))) (Ty↝ f T) (Ty↝ g T))
        Tm-eq : (T : Typ A) (t : Tm A T) → PathP (λ i → Tm (ɣ i) (Ty-eq T i)) (Tm↝ f T t) (Tm↝ g T t)
-       Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (λ i → (proj-Slc B C ɣ i) (Ty-eq T i))
+       Slc-eq : (T : Typ A) → ↝-bi-sim (Slc↝ f T) (Slc↝ g T) (λ i → (proj-Slc ɣ i) (Ty-eq T i))
 
   open ↝-bi-sim
 
   ↝-≡-intro : {A B C : TyTmStr} (f : A ↝ B) (g : A ↝ C) (ɣ : B ≡ C) (β : ↝-bi-sim f g ɣ) → (PathP (λ i → (A ↝ (ɣ i))) f g) 
   ↝-≡-intro f g ɣ β i .Ty↝ T = Ty-eq β T i
   ↝-≡-intro f g ɣ β i .Tm↝ T t = Tm-eq β T t i
-  ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (λ j → (proj-Slc B C ɣ j) (Ty-eq β T j)) (Slc-eq β T) i
+  ↝-≡-intro {B = B} {C = C} f g ɣ β i .Slc↝ T = ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (λ j → (proj-Slc ɣ j) (Ty-eq β T j)) (Slc-eq β T) i
 
   -- ↝-≡-intro (Slc↝ f T) (Slc↝ g T) (proj-Slc B C ɣ (Ty↝ f T) (Ty↝ g T) (Ty-eq β T)) (Slc-eq β T) i 
 
@@ -285,60 +285,6 @@ module BSystems where
   --     (SlcHomomorphism Hf T) (SlcHomomorphism Hg (Ty↝ f T))
 
 
-  -- this should basically be substitution, though I would like to turn this into a morphism somehow
-  data ListOfTerms {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
-    e : ListOfTerms Bᵇ ε
-    cnsTy : (T : Typ B) (Γ' : Ctxt (Slc B T)) → (ɣ : ListOfTerms (slc Bᵇ T) Γ') → (ListOfTerms Bᵇ (T ⊳ Γ'))
-    cnsTm : (T : Typ B) (t : Tm B T) (Γ' : Ctxt (Slc B T)) → (ɣ : ListOfTerms (slc Bᵇ T) Γ') → (ListOfTerms Bᵇ (T ⊳ Γ'))
-
-  AppListOfTerms : {A : TyTmStr} {B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) (Γ : Ctxt A) (f : A ↝ B) (L : ListOfTerms Aᵇ Γ) → (ListOfTerms Bᵇ (AppCtxt Γ f))
-  AppListOfTerms Aᵇ Bᵇ Γ f e = e
-  AppListOfTerms Aᵇ Bᵇ Γ f (cnsTy T Γ' L) = cnsTy (Ty↝ f T) (AppCtxt Γ' (Slc↝ f T)) (AppListOfTerms (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ' (Slc↝ f T) L)
-  AppListOfTerms Aᵇ Bᵇ Γ f (cnsTm T t Γ' L) = cnsTm (Ty↝ f T) (Tm↝ f T t) (AppCtxt Γ' (Slc↝ f T)) (AppListOfTerms (slc Aᵇ T) (slc Bᵇ (Ty↝ f T)) Γ' (Slc↝ f T) L) 
-
-  SubListOfTerms : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B) (t : Tm B T) (Γ : Ctxt (Slc B T)) (L : ListOfTerms (slc Bᵇ T) Γ) → (ListOfTerms Bᵇ (SubCtxt Bᵇ T t Γ))
-  SubListOfTerms Bᵇ T t Γ L = AppListOfTerms (slc Bᵇ T) Bᵇ Γ (sub Bᵇ T t) L
-
-  -- TerminalSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (ListOfTerms Bᵇ Γ)
-  -- TerminalSubst Bᵇ ε = e
-  -- TerminalSubst Bᵇ (T ⊳ Γ) = {! var Bᵇ T  !}
-
- -- {-# TERMINATING #-} -- this should hopefully be fixable but we leave it in here to test the idea
-
-  {-
-  SubstCtxt : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → (Ctxt B)
-  SubstCtxt Bᵇ ε e = ε
-  SubstCtxt Bᵇ Γ (cnsTy T Γ' L) = T ⊳ (SubstCtxt (slc Bᵇ T) Γ' L)
-  SubstCtxt Bᵇ Γ (cnsTm T t Γ' L) = SubstCtxt Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)
-
-  SubCtxtTyStep : {B : TyTmStr} (Bᵇ : PreBSystem B) (T' : Typ B) (t : Tm B T') (Γ' : Ctxt (Slc B T')) (T : Typ (TopTyTm Γ')) → (Typ (TopTyTm (SubCtxt Bᵇ T' t Γ')))
-  SubCtxtTyStep Bᵇ T' t Γ' T = Ty↝ (SlcHomCtxt (slc Bᵇ T') Bᵇ Γ' (sub Bᵇ T' t)) T
-
-  SubCtxtTmStep : {B : TyTmStr} (Bᵇ : PreBSystem B) (T' : Typ B) (t : Tm B T') (Γ' : Ctxt (Slc B T')) (T : Typ (TopTyTm Γ')) (t' : Tm (TopTyTm Γ') T) 
-      → (Tm (TopTyTm (SubCtxt Bᵇ T' t Γ')) (SubCtxtTyStep Bᵇ T' t Γ' T))
-  SubCtxtTmStep Bᵇ T' t Γ' T t' = Tm↝ (SlcHomCtxt (slc Bᵇ T') Bᵇ Γ' (sub Bᵇ T' t)) T t'
-
-  idSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) → (ListOfTerms Bᵇ Γ)
-  idSubst Bᵇ ε = e
-  idSubst Bᵇ (T ⊳ Γ) = cnsTy T Γ (idSubst (slc Bᵇ T) Γ)
-
-  -- this apparently only works in a non cubical setting since I'm using injectivity of constructors 
-  conSubst : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (σ : ListOfTerms Bᵇ Γ) (ɣ : ListOfTerms Bᵇ (SubstCtxt Bᵇ Γ σ)) → (ListOfTerms Bᵇ Γ)
-  conSubst Bᵇ Γ e ɣ = e
-  conSubst Bᵇ Γ (cnsTy T Γ' σ) (cnsTy .T .(SubstCtxt (slc Bᵇ T) Γ' σ) ɣ) = cnsTy T Γ' σ
-  conSubst Bᵇ Γ (cnsTy T Γ' σ) (cnsTm .T t .(SubstCtxt (slc Bᵇ T) Γ' σ) ɣ) = cnsTm T t Γ' σ
-  conSubst Bᵇ Γ (cnsTm T t Γ' σ) ɣ = cnsTm T t Γ' σ
-
-  -- one would probably need an equality between the target context of the composition and the original second target context
--}
-  -- {-# TERMINATING #-}
-  -- SubstFun : {B : TyTmStr} (Bᵇ : PreBSystem B) (Γ : Ctxt B) (L : ListOfTerms Bᵇ Γ) → ((TopTyTm Γ) ↝ (TopTyTm (SubstCtxt Bᵇ Γ L)))
-  -- SubstFun {B} Bᵇ Γ e = idStr B
-  -- SubstFun Bᵇ Γ (cnsTy T Γ' L) = SubstFun (slc Bᵇ T) Γ' L
-  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Ty↝ T' = Ty↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T')
-  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Tm↝ T' t' = Tm↝ (SubstFun Bᵇ (SubCtxt Bᵇ T t Γ') (SubListOfTerms Bᵇ T t Γ' L)) (SubCtxtTyStep Bᵇ T t Γ' T') (SubCtxtTmStep Bᵇ T t Γ' T' t')
-  -- SubstFun Bᵇ Γ (cnsTm T t Γ' L) .Slc↝ T' = {! idStr (Slc (TopTyTm Γ') T')   !}
-
   -- -- next try for substitutions
 {-}
   data BSubst {B : TyTmStr} (Bᵇ : PreBSystem B) : (Γ : Ctxt B) → Type where
@@ -364,25 +310,6 @@ module BSystems where
   NonDepBSubst Bᵇ Γ Δ = BSubst' Bᵇ Γ (AppCtxt Δ (wkCtxt Bᵇ Γ))
 
 -}
-{-
-  interleaved mutual
-
-    data BSubstH {A B : TyTmStr} (Aᵇ : PreBSystem A) (Bᵇ : PreBSystem B) : Ctxt A → Ctxt B → Type where
-      ε : (Γ : Ctxt A) → (BSubstH Aᵇ Bᵇ Γ ε)
-      cns : (Γ : Ctxt A) (T : Typ A) (t : (TermsInCtx Γ (Ty↝ (wkCtxt Bᵇ Γ) T)))
-            (Γ' : Ctxt (TopTyTm Γ)) ()
-    
-    data BSubstnew {B : TyTmStr} (Bᵇ : PreBSystem B) : Ctxt B → Ctxt B → Type where
-      ε : (Γ : Ctxt B) → (BSubstnew Bᵇ Γ ε)
-      cns : (Γ : Ctxt B) (T : Typ B) (t : (TermsInCtx Γ (Ty↝ (wkCtxt Bᵇ Γ) T)))
-            (Γ' : Ctxt (TopTyTm Γ)) (Δ' : Ctxt (Slc B T))
-            (σ : BSubstH (TopPre Bᵇ Γ) (slc Bᵇ T) Γ' Δ')
-            → (BSubstnew Bᵇ (concat Γ Γ') (T ⊳ Δ'))
-    
-    SubHom : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Γ : Ctxt A} {Δ : Ctxt B}
-            (σ : BSubstH Aᵇ Bᵇ Γ Δ) → ((TopTyTm Γ) ↝ (TopTyTm Δ))
-    SubHom = {!   !}
--}
   
   -- -- --
 
@@ -405,4 +332,10 @@ module BSystems where
   wkCtxtIsHomomorphism : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) → is-homomorphism Bᵇ (TopPre Bᵇ Γ) (wkCtxt Bᵇ Γ)
   wkCtxtIsHomomorphism {Bᵇ = Bᵇ} BS ε = IdIsHomomorphism Bᵇ
   wkCtxtIsHomomorphism BS (T ⊳ Γ) = ○-homomorphism (wk-is-homomorphism BS T) (wkCtxtIsHomomorphism (BSlc BS T) Γ)
+
+  -- transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
+  -- transportSplit p f g i .Ty↝ T = sym ((cong (λ x → (transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g x))) ((transportRefl (Ty↝ f T)))) 
+  --     ∙ (sym (cong (λ x → transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g (Ty↝ f x))) (transportRefl T)))) i 
+  -- transportSplit p f g i .Tm↝ T t = {!   !}
+  -- transportSplit p f g i .Slc↝ T = {!   !}
 

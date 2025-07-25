@@ -28,9 +28,9 @@ module ConvertingSubstitutions where
                     {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
                     {f : B ↝ (CtxToTyTmStr AS Γ)}
                     {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))} {Δ' : Ctx (BSystemToTyStr BS)}
-                    (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ')
+                    (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ') (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
                     → is-homomorphism (CtxToPreSys BS Δ') (CtxToPreSys (CtxToBSys AS Γ) Γ') (SubstToHomHelp ɣ)
-    SubstToHomHelpIsHomomorphism (● _) = {!   !}
+    SubstToHomHelpIsHomomorphism {AS = AS} {Γ = Γ} {Γ' = Γ'} (● _) H = ○-homomorphism H  (TerProjIsHomomorphism (CtxToBSys AS Γ) Γ')
     SubstToHomHelpIsHomomorphism (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomHelpIsHomomorphism ɣ  !}
 
 
