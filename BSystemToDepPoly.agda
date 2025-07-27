@@ -192,6 +192,16 @@ module BSystemToDepPoly where
     NeededSubstGenEq AS BS ϵ Γ' T T' = refl
     NeededSubstGenEq AS BS (T₁ ► Γ) Γ' T T' = NeededSubstGenEq (BSystem.BSlc AS T₁) BS Γ Γ' T T'
 
+    NeededSubstGenEqActual : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) 
+                (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx ⌈ Γ ⌉) (T : TyTmStr.Typ B)
+                → PathP (λ i → (φ : (Ctx (++-ceil Γ Γ' i))) → (g : B ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ))
+                → (t : TyTmStr.Tm (CtxToTyBSys++Eq AS Γ Γ' i φ) (_↝_.Ty↝ g T))
+                → (TyTmStr.Slc B T) ↝ (CtxToTyBSys++Eq AS Γ Γ' i φ)) 
+                (λ φ g t → (NeededSubstGen (CtxToBSys AS (Γ ++ Γ')) BS φ g T t)) 
+                λ φ g t → NeededSubstGen (CtxToBSys (CtxToBSys AS Γ) Γ') BS φ g T t
+    NeededSubstGenEqActual AS BS ϵ Γ' T = refl
+    NeededSubstGenEqActual AS BS (T₁ ► Γ) Γ' T = NeededSubstGenEqActual (BSystem.BSlc AS T₁) BS Γ Γ' T
+
     NeededSubstGenTriv : {A B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) 
             (f : B ↝ (CtxToTyTmStr AS Γ)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr AS Γ) (_↝_.Ty↝ f T)) (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
             → (NeededSubstGen AS BS Γ f T t) ○ (PreBSystem.wk Bᵇ T) ≡ f
@@ -258,6 +268,16 @@ module BSystemToDepPoly where
                 λ φ g → BSystemToDepPolyHelp (CtxToBSys (CtxToBSys AS Γ) Γ') BS φ g
     BSystemToDepPolyHelpEq AS BS ϵ Γ' = refl
     BSystemToDepPolyHelpEq AS BS (T ► Γ) Γ' = BSystemToDepPolyHelpEq (BSystem.BSlc AS T) BS Γ Γ'
+    
+
+    BSystemToDepPolyHelpEqSimple : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
+                (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr AS)) (Γ' : Ctx ⌈ Γ ⌉)
+                → PathP (λ i → (g : B ↝ (TyTmStr++Eq AS Γ Γ' i)) → DepPoly (++-ceil Γ Γ' i) (BSystemToTyStr BS)) 
+                        (λ g → BSystemToDepPolyHelp AS BS (Γ ++ Γ') g) 
+                        λ g → BSystemToDepPolyHelp (CtxToBSys AS Γ) BS Γ' g
+    BSystemToDepPolyHelpEqSimple AS BS Γ Γ' i g .Tm Γ'' T' = TyTmStr.Tm (CtxToTyBSys++Eq AS Γ Γ' i Γ'')  (_↝_.Ty↝ ((TerminalProjCeil AS Γ Γ' i Γ'') ○ g) T')
+    BSystemToDepPolyHelpEqSimple AS BS Γ Γ' i g .⇑ {Γ''} {T'} t = BSystemToDepPolyHelpEq AS (BSystem.BSlc BS T') Γ Γ' i Γ''
+                (NeededSubstGenEqActual AS BS Γ Γ' T' i Γ'' ((TerminalProjCeil AS Γ Γ' i Γ'') ○ g) t) 
 
 
         -- this seems kind of weird to me 

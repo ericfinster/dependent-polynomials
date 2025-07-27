@@ -24,6 +24,23 @@ module ConvertingSubstitutions where
     SubstToHomHelp {AS = AS} {BS = BS} {Γ = Γ} (cns Γ' T' t Γ'' Δ' ɣ) = transport (λ i → (TopTyTm (CtxPToCtxB (BSystem.BSlc BS T') Δ') ↝ (TopTyTm++BSys (CtxToBSys AS Γ) Γ' Γ'' i)))
                     (SubstToHomHelp ɣ)
 
+    SubstToHomHelpIsHomomorphismHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
+                    {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ₁ : Ctx (BSystemToTyStr AS)} 
+                    {f : B ↝ (CtxToTyTmStr AS Γ₁)} (T : TyTmStr.Typ B)
+                    {Γ : Ctx (BSystemToTyStr (CtxToBSys AS Γ₁))} {Δ' : Ctx (BSystemToTyStr (BSystem.BSlc BS T))}
+                    {Γ' : Ctx (BSystemToTyStr (CtxToBSys (CtxToBSys AS Γ₁) Γ))}
+                    (t : TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ₁) Γ) (_↝_.Ty↝ (TerminalProj (CtxToBSys AS Γ₁) Γ) (_↝_.Ty↝ f T)))
+                    (ɣ : Subst (BSystemToDepPolyHelp (CtxToBSys AS Γ₁) (BSystem.BSlc BS T) Γ
+                    (NeededSubstGen (CtxToBSys AS Γ₁) BS Γ (TerminalProj (CtxToBSys AS Γ₁) Γ ○ f) T t)) Γ' Δ') 
+                    → is-homomorphism (CtxToPreSys (BSystem.BSlc BS T) Δ') 
+                        (CtxToPreSys (CtxToBSys (CtxToBSys AS Γ₁) Γ) Γ') (SubstToHomHelp ɣ) 
+                    ≡ is-homomorphism (CtxToPreSys BS (T ► Δ')) (CtxToPreSys (CtxToBSys AS Γ₁) (Γ ++ Γ'))
+                        (transport (λ i → TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ') ↝ TopTyTm++BSys (CtxToBSys AS Γ₁) Γ Γ' i)
+                        (SubstToHomHelp ɣ))
+    SubstToHomHelpIsHomomorphismHelp {AS = AS} {BS = BS} {Γ₁ = Γ₁} T {Γ = Γ} {Δ' = Δ'} {Γ' = Γ'} t ɣ i = is-homomorphism (CtxToPreSys (BSystem.BSlc BS T) Δ') (PreSys++Eq (CtxToBSys AS Γ₁) Γ Γ' (~ i))
+            (transport-filler (λ i → TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ') ↝ TopTyTm++BSys (CtxToBSys AS Γ₁) Γ Γ' i) (SubstToHomHelp ɣ) i)
+
+        -- type inference isn't woeking here since some stuff in the helper needs to be explicit
     SubstToHomHelpIsHomomorphism : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
                     {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
                     {f : B ↝ (CtxToTyTmStr AS Γ)}
@@ -31,8 +48,10 @@ module ConvertingSubstitutions where
                     (ɣ : Subst (BSystemToDepPolyHelp AS BS Γ f) Γ' Δ') (H : is-homomorphism Bᵇ (CtxToPreSys AS Γ) f)
                     → is-homomorphism (CtxToPreSys BS Δ') (CtxToPreSys (CtxToBSys AS Γ) Γ') (SubstToHomHelp ɣ)
     SubstToHomHelpIsHomomorphism {AS = AS} {Γ = Γ} {Γ' = Γ'} (● _) H = ○-homomorphism H  (TerProjIsHomomorphism (CtxToBSys AS Γ) Γ')
-    SubstToHomHelpIsHomomorphism (cns Γ T t Γ' Δ' ɣ) = {! SubstToHomHelpIsHomomorphism ɣ  !}
+    SubstToHomHelpIsHomomorphism {AS = AS} {BS = BS} {Γ = Γ₁} {f = f} (cns Γ T t Γ' Δ' ɣ) H = {! transport (λ i → (SubstToHomHelpIsHomomorphismHelp T t ɣ i))
+        (SubstToHomHelpIsHomomorphism ɣ (NeededSubstGenIsHomomorphism (CtxToBSys AS Γ₁) BS Γ (TerminalProj (CtxToBSys AS Γ₁) Γ ○ f) T t (○-homomorphism H (TerProjIsHomomorphism (CtxToBSys AS Γ₁) Γ)))) !} --  SubstToHomHelpIsHomomorphism ɣ
 
+    -- transport-filler (λ i → TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ') ↝ TopTyTm++BSys (CtxToBSys AS Γ₁) Γ Γ' i) (SubstToHomHelp ɣ)
 
     SubstToHom : {B : TyTmStr} {Bᵇ : PreBSystem B} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr BS)} 
                     {Δ : Ctx (BSystemToTyStr BS)} (ɣ : Subst (BSystemToDepPoly BS) Γ Δ)
@@ -101,9 +120,9 @@ module ConvertingSubstitutions where
                         (BSystemToDepPolyHelp (CtxToBSys AS Γ'') (CtxToBSys (BSystem.BSlc BS T) Δ') Γ''' (SubstToHomHelp ɣ))
                         ≡ BSystemToDepPolyHelp AS (CtxToBSys (BSystem.BSlc BS T) Δ') (Γ'' ++ Γ''')
                         (transport (λ i → TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ') ↝ TopTyTm++BSys AS Γ'' Γ''' i) (SubstToHomHelp ɣ)) 
-    Test AS BS f ϵ Γ''' t ɣ = {!   !}
-    Test {Aᵇ = Aᵇ} AS BS f {T = T'} (T ► Γ'') Γ''' t ɣ = {! cong (λ x → (NeededSubstGen (BSystem.BSlc AS T) BS  Γ'' x T' ?)) 
-            (○-assoc (TerminalProj (BSystem.BSlc AS T) Γ'') (PreBSystem.wk Aᵇ T) f) !} -- (TestHelp AS BS f T Γ'' Γ''' t ɣ)    Test (BSystem.BSlc AS T) BS Γ'' Γ''' t
+    Test AS BS f {T = T} {Δ' = Δ'} Γ'' Γ''' t ɣ i = transport-fillerExt⁻ (λ i₁ → DepPoly (++-ceil Γ'' Γ''' (~ i₁)) (BSystemToTyStr (CtxToBSys (BSystem.BSlc BS T) Δ'))) i 
+            (BSystemToDepPolyHelpEqSimple AS (CtxToBSys (BSystem.BSlc BS T) Δ') Γ'' Γ''' (~ i)
+            (transport-fillerExt (λ i₁ → TopTyTm (CtxPToCtxB (BSystem.BSlc BS T) Δ') ↝ TopTyTm++BSys AS Γ'' Γ''' i₁) i (SubstToHomHelp ɣ))) 
 
 
     SubstToHomEqHelp : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
