@@ -1,4 +1,4 @@
-{-# OPTIONS --verbose=term:5 #-}
+
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Isomorphism
@@ -87,83 +87,83 @@ module BSystemToMonad where
             ∎ !}
 
     h : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B}
-      {Cᵇ : PreBSystem C} {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ}
-      {CS : BSystem C Cᵇ} {Γ : Ctx (BSystemToTyStr AS)}
-      {Δ : Ctx (BSystemToTyStr BS)}
-      {f : CtxToTyTmStr BS Δ ↝ CtxToTyTmStr AS Γ}
-      {g : C ↝ CtxToTyTmStr BS Δ}
-      {H : is-homomorphism (CtxToPreSys BS Δ) (CtxToPreSys AS Γ) f}
-      {Γ = Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))}
+      {Cᵇ : PreBSystem C} (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ)
+      (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr AS))
+      (Δ : Ctx (BSystemToTyStr BS))
+      (f : CtxToTyTmStr BS Δ ↝ CtxToTyTmStr AS Γ)
+      (g : C ↝ CtxToTyTmStr BS Δ)
+      (H : is-homomorphism (CtxToPreSys BS Δ) (CtxToPreSys AS Γ) f)
+      {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))}
       {T = T' : Ty (BSystemToTyStr CS)}
-      {fst = fst₁ : Ctx (BSystemToTyStr (CtxToBSys BS Δ))}
-      {fst = fst₂
-       : Subst (BSystemToDepPolyHelp AS (CtxToBSys BS Δ) Γ f) Γ' fst₁}
-      {snd = snd₁ : Tm (BSystemToDepPolyHelp BS CS Δ g) fst₁ T'} 
-        → (SubstToHomHelp fst₂ ○ NeededSubstGen (CtxToBSys BS Δ) CS fst₁ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁) 
+      {fst₁ : Ctx (BSystemToTyStr (CtxToBSys BS Δ))}
+      (fst₂
+       : Subst (BSystemToDepPolyHelp AS (CtxToBSys BS Δ) Γ f) Γ' fst₁)
+      (snd : Tm (BSystemToDepPolyHelp BS CS Δ g) fst₁ T') 
+        → (SubstToHomHelp fst₂ ○ NeededSubstGen (CtxToBSys BS Δ) CS fst₁ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd) 
         ≡ (NeededSubstGen (CtxToBSys AS Γ) CS Γ' (TerminalProj (CtxToBSys AS Γ) Γ' ○ (f ○ g)) T' (transport
                     (λ i → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)))
-    h {AS = AS} {BS = BS} {CS = CS} {Γ = Γ} {Δ = Δ} {f = f} {g = g} {H = H} {Γ = Γ'} {T = T'} {fst = fst₁} {fst = fst₂} {snd = snd₁}  = {!
-                (SubstToHomHelp fst₂ ○ NeededSubstGen (CtxToBSys BS Δ) CS fst₁ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁)
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd)))
+    h AS BS CS Γ Δ f g H {Γ' = Γ'} {T = T'} {fst₁ = fst₁} fst₂ snd  = {!
+                (SubstToHomHelp fst₂ ○ NeededSubstGen (CtxToBSys BS Δ) CS fst₁ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd)
             ≡⟨ refl ⟩
-                (SubstToHomHelp fst₂) ○ ((PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd₁)
+                (SubstToHomHelp fst₂) ○ ((PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd)
                     ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T'))
-            ≡⟨ sym (○-assoc (SubstToHomHelp fst₂) (PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd₁)
+            ≡⟨ sym (○-assoc (SubstToHomHelp fst₂) (PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd)
                 (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T'))  ⟩ 
-                ((SubstToHomHelp fst₂) ○ (PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd₁))
+                ((SubstToHomHelp fst₂) ○ (PreBSystem.sub (CtxToPreSys (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd))
                     ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')      
-            ≡⟨ cong (λ x → x ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')) (is-homomorphism.sub≡ (SubstToHomHelpIsHomomorphism fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd₁) ⟩
+            ≡⟨ cong (λ x → x ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')) (is-homomorphism.sub≡ (SubstToHomHelpIsHomomorphism fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd) ⟩
                 ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')) 
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd₁)) 
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T') snd)) 
                     ○ (_↝_.Slc↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T'))) 
                     ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')      
             ≡⟨ ? ⟩
                 (PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((SubstToHomHelp fst₂) ○ (TerminalProj (CtxToBSys BS Δ) fst₁)) ○ g) T')
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd)
                     ○ (_↝_.Slc↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T'))) 
                     ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')
             ≡⟨ ? ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((SubstToHomHelp fst₂) ○ (TerminalProj (CtxToBSys BS Δ) fst₁)) ○ g) T')
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd)
                     ○ ((_↝_.Slc↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T')) 
                     ○ (_↝_.Slc↝ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T'))
             ≡⟨ refl ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((SubstToHomHelp fst₂) ○ (TerminalProj (CtxToBSys BS Δ) fst₁)) ○ g) T')
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd)
                 ○ (_↝_.Slc↝ ((SubstToHomHelp fst₂) ○ ((TerminalProj (CtxToBSys BS Δ) fst₁) ○ g)) T')
             ≡⟨ ? ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((SubstToHomHelp fst₂) ○ (TerminalProj (CtxToBSys BS Δ) fst₁)) ○ g) T')
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd)
                 ○ (_↝_.Slc↝ (((SubstToHomHelp fst₂) ○ (TerminalProj (CtxToBSys BS Δ) fst₁)) ○ g) T')
             ≡⟨ (λ i → ((PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ ((Eq3Diverge H fst₂ i) ○ g) T')
                     ((transport-fillerExt (λ i₁ → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ ((Eq3Diverge H fst₂ i₁) ○ g) T'))) i
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Δ) fst₁) ○ g) T') snd₁)))
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ ((TerminalProj (CtxToBSys BS Δ) fst₁) ○ g) T') snd)))
                     ○ (_↝_.Slc↝ ((Eq3Diverge H fst₂ i) ○ g) T'))) ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((TerminalProj (CtxToBSys AS Γ) Γ') ○ f) ○ g) T')
                 (transport (λ i₁ → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i₁) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁))
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd))
                 ○ (_↝_.Slc↝ (((TerminalProj (CtxToBSys AS Γ) Γ') ○ f) ○ g) T')
             ≡⟨ ? ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (((TerminalProj (CtxToBSys AS Γ) Γ') ○ f) ○ g) T')
                 (transport (λ i₁ → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i₁) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁))
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd))
                 ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) Γ') ○ (f ○ g)) T')
             ≡⟨ ? ⟩
                 PreBSystem.sub (CtxToPreSys (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ ((TerminalProj (CtxToBSys AS Γ) Γ') ○ (f ○ g)) T')
                 (transport (λ i₁ → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i₁) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁))
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd))
                 ○ (_↝_.Slc↝ ((TerminalProj (CtxToBSys AS Γ) Γ') ○ (f ○ g)) T')
             ≡⟨ refl ⟩
                 NeededSubstGen (CtxToBSys AS Γ) CS Γ' (TerminalProj (CtxToBSys AS Γ) Γ' ○ (f ○ g)) T'
                     (transport (λ i → TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁))
+                    (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd))
             ∎ 
              !} 
 
             -- all thats left to do here is to change the brackets inside the function with cong and assoc
 
 
-
+    {-# TERMINATING #-}
     BSystemToMonad-μ-Help : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C}
                 (AS : BSystem A Aᵇ) (BS : BSystem B Bᵇ) (CS : BSystem C Cᵇ) (Γ : Ctx (BSystemToTyStr AS))
                 (Δ : Ctx (BSystemToTyStr BS))
@@ -171,37 +171,32 @@ module BSystemToMonad where
             → BSystemToDepPolyHelp AS (CtxToBSys BS Δ) Γ f ⊚ BSystemToDepPolyHelp BS CS Δ g ⇒ BSystemToDepPolyHelp AS CS Γ (f ○ g)
     BSystemToMonad-μ-Help AS BS CS Γ Δ f g H .Tm⇒ {Γ'} {T'} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ') (_↝_.Ty↝ (Eq3Diverge H fst₂ i) (_↝_.Ty↝ g T'))))
              (_↝_.Tm↝ (SubstToHomHelp fst₂) (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T')) snd₁)
-    BSystemToMonad-μ-Help AS BS CS Γ Δ f g H .⇑⇒ {Γ'} {T'} (fst₁ , fst₂ , snd₁) = {! 
+    BSystemToMonad-μ-Help AS BS CS Γ Δ f g H .⇑⇒ {Γ'} {T'} (fst₁ , fst₂ , snd₁) = transport
+            (cong (λ x → ⌈ fst₂ ⌉s ⊚ BSystemToDepPolyHelp (CtxToBSys BS Δ) (BSystem.BSlc CS T') fst₁ (NeededSubstGen (CtxToBSys BS Δ) CS fst₁
+                (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁)  ⇒ BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc CS T') Γ' x) (h AS BS CS Γ Δ f g H fst₂ snd₁))
+            (transport (cong (λ x → x ⊚ BSystemToDepPolyHelp (CtxToBSys BS Δ) (BSystem.BSlc CS T') fst₁ (NeededSubstGen (CtxToBSys BS Δ) CS fst₁
+                (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁) ⇒ BSystemToDepPolyHelp (CtxToBSys AS Γ) (BSystem.BSlc CS T') Γ'
+                (SubstToHomHelp fst₂ ○  NeededSubstGen (CtxToBSys BS Δ) CS fst₁ (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁)) (sym (SubstToHomEqHelp fst₂)))
             (BSystemToMonad-μ-Help (CtxToBSys AS Γ) (CtxToBSys BS Δ) (BSystem.BSlc CS T') Γ' fst₁ (SubstToHomHelp fst₂)
-            (NeededSubstGen (CtxToBSys BS Δ) CS fst₁ ((TerminalProj (CtxToBSys BS Δ) fst₁) ○ g) T' snd₁) (SubstToHomHelpIsHomomorphism fst₂))
-             !}
+                (NeededSubstGen (CtxToBSys BS Δ) CS fst₁ ((TerminalProj (CtxToBSys BS Δ) fst₁) ○ g) T' snd₁) (SubstToHomHelpIsHomomorphism fst₂ H)))
 
-
-
-
-             {-
-                    (SubstToHomHelp fst₂ ○
-                    NeededSubstGen (CtxToBSys BS Δ) CS fst₁
-                    (TerminalProj (CtxToBSys BS Δ) fst₁ ○ g) T' snd₁)
-
-                    and 
-
-                    (NeededSubstGen (CtxToBSys AS Γ) CS Γ'
-                    (TerminalProj (CtxToBSys AS Γ) Γ' ○ (f ○ g)) T'
-                    (transport
-                    (λ i →
-                    TyTmStr.Tm (CtxToTyTmStr (CtxToBSys AS Γ) Γ')
-                    (_↝_.Ty↝ (Eq3Diverge H fst₂ i) (_↝_.Ty↝ g T')))
-                    (_↝_.Tm↝ (SubstToHomHelp fst₂)
-                    (_↝_.Ty↝ (TerminalProj (CtxToBSys BS Δ) fst₁) (_↝_.Ty↝ g T'))
-                    snd₁)))
-
-                    should probably be equal by reasoning similar as done for Eq3 so we only need to transport along that equality also
-             -}
+        
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
     BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T))) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
-    BSystemToMonad-μ BS .⇑⇒  {Γ} {T} (fst₁ , fst₂ , snd₁) = {! BSystemToMonad-μ-Help  BS BS BS Γ fst₁ (SubstToHom fst₂) (TerminalProj BS fst₁) (SubstToHomHomomorphism fst₂) !}
+    BSystemToMonad-μ BS .⇑⇒  {Γ} {T} (fst₁ , fst₂ , snd₁) = {!   
+           !}
+
+        -- cong₂ (λ x y → x ⊚ BSystemToDepPolyHelp BS (BSystem.BSlc BS T) fst₁ (NeededSubst BS fst₁ T snd₁) ⇒ BSystemToDepPolyHelp BS (BSystem.BSlc BS T) Γ y) 
+        --     (sym (SubstToHomEq1 fst₂))
+
+        --    transport (cong (λ x → x ⊚ BSystemToDepPolyHelp BS BS fst₁ (TerminalProj BS fst₁) 
+        --     ⇒ BSystemToDepPolyHelp BS BS Γ (SubstToHom fst₂ ○ TerminalProj BS fst₁))  (sym (SubstToHomEq1 fst₂)))
+        --     (BSystemToMonad-μ-Help  BS BS BS Γ fst₁ (SubstToHom fst₂) (TerminalProj BS fst₁) (SubstToHomHomomorphism fst₂))
+
+    -- BSystemToMonad-μ-Help  BS BS BS Γ fst₁ (SubstToHom fst₂) (TerminalProj BS fst₁) (SubstToHomHomomorphism fst₂)
+
+
 {-
 
     this is all written to work without the rewrite
