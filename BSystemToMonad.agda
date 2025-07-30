@@ -193,29 +193,7 @@ module BSystemToMonad where
                     NeededSubst BS Γ T    
                         (transport (λ i → TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T))
                             (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁))                      
-             ∎
-
-            -- (PreBSystem.sub (CtxToPreSys BS Γ) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T) 
-            -- (transport-fillerExt (λ i → TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T)) i (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)))
-            -- ○ (_↝_.Slc↝ (Eq3 BS fst₁ Γ fst₂ i) T)
-
-            --                   (SubstToHom fst₂ ○ NeededSubst BS fst₁ T snd₁)
-            -- ≡⟨ ? ⟩
-            --     (SubstToHom fst₂ ○ (PreBSystem.sub (CtxToPreSys BS fst₁) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)) ○ (_↝_.Slc↝(TerminalProj BS fst₁) T)
-            -- ≡⟨ cong (λ x → x ○ (_↝_.Slc↝ (TerminalProj BS fst₁) T)) (is-homomorphism.sub≡ (SubstToHomHomomorphism fst₂) ? snd₁) ⟩
-            --     (PreBSystem.sub (CtxToPreSys BS Γ)  (_↝_.Ty↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T)) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
-            --         ○ _↝_.Slc↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
-            --             ○ _↝_.Slc↝ (TerminalProj BS fst₁) T
-            -- ≡⟨ ? ⟩
-            --     PreBSystem.sub (CtxToPreSys BS Γ)  (_↝_.Ty↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T)) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
-            --         ○ ((_↝_.Slc↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T))
-            --             ○ (_↝_.Slc↝ (TerminalProj BS fst₁) T))
-            -- ≡⟨ refl ⟩
-            --     PreBSystem.sub (CtxToPreSys BS Γ)  (_↝_.Ty↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T)) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
-            --         ○ (_↝_.Slc↝ ((SubstToHom fst₂) ○ (TerminalProj BS fst₁)) T)
-            -- ≡⟨ ? ⟩  
-            --     ?                              
-            --  ∎         
+             ∎        
 
     BSystemToMonad-μ : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (BSystemToDepPoly BS ⊚ BSystemToDepPoly BS ⇒ BSystemToDepPoly BS)
     BSystemToMonad-μ BS .Tm⇒ {Γ} {T} (fst₁ , fst₂ , snd₁) = transport (λ i → (TyTmStr.Tm (TopTyTm (CtxPToCtxB BS Γ)) (_↝_.Ty↝ (Eq3 BS fst₁ Γ fst₂ i) T))) (_↝_.Tm↝ (SubstToHom fst₂) (_↝_.Ty↝ (TerminalProj BS fst₁) T) snd₁)
