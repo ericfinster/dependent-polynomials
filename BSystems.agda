@@ -149,6 +149,7 @@ module BSystems where
   Ty↝-comp : {A B C : TyTmStr} (f : B ↝ C) (g : A ↝ B) (T : Typ A) → (Ty↝ (f ○ g) T) ≡ (Ty↝ f (Ty↝ g T))
   Ty↝-comp f g T = refl
 
+
   -- -- --
 
   record PreBSystem (A : TyTmStr) : Type where
@@ -352,10 +353,10 @@ module BSystems where
   wkCtxtIsHomomorphism {Bᵇ = Bᵇ} BS ε = IdIsHomomorphism Bᵇ
   wkCtxtIsHomomorphism BS (T ⊳ Γ) = ○-homomorphism (wk-is-homomorphism BS T) (wkCtxtIsHomomorphism (BSlc BS T) Γ)
 
-  -- transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
-  -- transportSplit p f g i .Ty↝ T = sym ((cong (λ x → (transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g x))) ((transportRefl (Ty↝ f T)))) 
-  --     ∙ (sym (cong (λ x → transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g (Ty↝ f x))) (transportRefl T)))) i 
-  -- transportSplit p f g i .Tm↝ T t = {!   !}
-  -- transportSplit p f g i .Slc↝ T = {!   !}
+  transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
+  transportSplit p f g i .Ty↝ T = sym ((cong (λ x → (transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g x))) ((transportRefl (Ty↝ f T)))) 
+      ∙ (sym (cong (λ x → transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g (Ty↝ f x))) (transportRefl T)))) i 
+  transportSplit p f g i .Tm↝ T t = {!   !}
+  transportSplit p f g i .Slc↝ T = {!   !}
 
  
