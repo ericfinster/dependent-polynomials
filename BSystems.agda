@@ -6,6 +6,9 @@ open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Transport
 open import Cubical.Data.Empty
 open import Cubical.Foundations.Path
+open import Cubical.Foundations.HLevels 
+open import Cubical.Data.Sigma
+
 
 module BSystems where
 
@@ -13,15 +16,22 @@ module BSystems where
     coinductive
     field
       Typ : Type -- this is just X itself
+      -- TypIsSet : isSet Typ
       Tm : Typ → Type -- this is delta^-1
+      -- TmIsSet : (T : Typ) → isSet (Tm T)
       Slc : Typ → TyTmStr -- this is ft^-1
 
   open TyTmStr
 
-  emptyStr : TyTmStr
-  emptyStr .Typ = ⊥
-  emptyStr .Tm = rec
-  emptyStr .Slc = rec
+  ΣStructure : {I : Type} (A : I → TyTmStr) → TyTmStr
+  ΣStructure {I} A .Typ = Σ[ i ∈ I ] Typ (A i)
+  ΣStructure A .Tm (fst₁ , snd₁) = Tm (A fst₁) snd₁
+  ΣStructure A .Slc (fst₁ , snd₁) = Slc (A fst₁) snd₁
+
+  -- emptyStr : TyTmStr
+  -- emptyStr .Typ = ⊥
+  -- emptyStr .Tm = rec
+  -- emptyStr .Slc = rec
 
   -- equalities needed for the intoduction of hom equality
 
@@ -70,6 +80,11 @@ module BSystems where
 
   open _↝_
 
+  HomIsSet : (A B : TyTmStr) → (isSet (A ↝ B))
+  HomIsSet A B x y x₁ y₁ i i₁ .Ty↝ T = {!   !}
+  HomIsSet A B x y x₁ y₁ i i₁ .Tm↝ = {!   !}
+  HomIsSet A B x y x₁ y₁ i i₁ .Slc↝ = {!   !}
+
   -- -- -- Composition and identity of Morphisms
 
   idStr : (A : TyTmStr) → (A ↝ A)
@@ -83,10 +98,10 @@ module BSystems where
   (f ○ g) .Slc↝ T = (Slc↝ f (Ty↝ g T)) ○ (Slc↝ g T)
 
 
-  EmptySubst : (B : TyTmStr) → emptyStr ↝ B
-  EmptySubst B .Ty↝ = rec
-  EmptySubst B .Tm↝ T x = rec T
-  EmptySubst B .Slc↝ T = rec T
+  -- EmptySubst : (B : TyTmStr) → emptyStr ↝ B
+  -- EmptySubst B .Ty↝ = rec
+  -- EmptySubst B .Tm↝ T x = rec T
+  -- EmptySubst B .Slc↝ T = rec T
 
   -- -- --
 
@@ -151,7 +166,7 @@ module BSystems where
 
 
   -- -- --
-
+  
   record PreBSystem (A : TyTmStr) : Type where
     coinductive
     field
@@ -230,7 +245,7 @@ module BSystems where
 
   IdIsHomomorphismVar : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B)
       → var Bᵇ T ≡ transport (λ j → Tm (Slc B T) (Ty↝ (IdIsHomomorphsimwk Bᵇ T j) T)) (var Bᵇ T)
-  IdIsHomomorphismVar {B} Bᵇ T i = {! transport (λ i₁ → Tm (Slc B T) (Ty↝ (IdIsHomomorphsimwk Bᵇ T i₁) T))  !}
+  IdIsHomomorphismVar {B} Bᵇ T i = {!   !}
 
 
   IdIsHomomorphism : {B : TyTmStr} (Bᵇ : PreBSystem B) → is-homomorphism Bᵇ Bᵇ (idStr B)
@@ -241,8 +256,8 @@ module BSystems where
       ≡⟨ sym (IdStrRN (sub Bᵇ T t)) ⟩
         sub Bᵇ T t ○ idStr (Slc B T)   
       ∎
-  IdIsHomomorphism {B = B} Bᵇ .var≡ T i = {! transport-filler (λ j → (Tm (Slc B T) (Ty↝ (IdIsHomomorphsimwk Bᵇ T j) T))) (var Bᵇ T) i !}
-  IdIsHomomorphism Bᵇ .SlcHomomorphism T = IdIsHomomorphism (slc Bᵇ T) 
+  IdIsHomomorphism {B = B} Bᵇ .var≡ T i = {! var Bᵇ T !}
+  IdIsHomomorphism Bᵇ .SlcHomomorphism T = {! IdIsHomomorphism (slc Bᵇ T) !} 
 
   wkCtxtCommutes : {B C : TyTmStr} (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (Γ : Ctxt B) (f : B ↝ C)
     (H : is-homomorphism Bᵇ Cᵇ f)
@@ -279,7 +294,7 @@ module BSystems where
 
 
   ○-homomorphism : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
-        (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g)
+        (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g) 
         → is-homomorphism Aᵇ Cᵇ (g ○ f)
   ○-homomorphism {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .wk≡ T = ○-homomorphismwk Hf Hg T
   ○-homomorphism {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .sub≡ T t = (g ○ f) ○ sub Aᵇ T t
@@ -294,7 +309,7 @@ module BSystems where
       ≡⟨ ○-assoc (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) (Slc↝ g (Ty↝ f T)) (Slc↝ f T) ⟩
         (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) ○ ((Slc↝ g (Ty↝ f T)) ○ (Slc↝ f T))
       ∎
-  ○-homomorphism {C = C} {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .var≡ T = {! proj-tm (○-homomorphismwk Hf Hg T) T  !} -- var≡ Hg (Ty↝ f T)   var≡ Hf T    Tm↝ (Slc↝ g (Ty↝ f T))  (Ty↝ (wk≡ Hf T i) T)   
+  ○-homomorphism {C = C} {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .var≡ T i = {! compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T)) i !} -- var≡ Hg (Ty↝ f T)   var≡ Hf T    Tm↝ (Slc↝ g (Ty↝ f T))  (Ty↝ (wk≡ Hf T i) T)   
   ○-homomorphism {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .SlcHomomorphism T = ○-homomorphism (SlcHomomorphism Hf T) (SlcHomomorphism Hg (Ty↝ f T))
 
     -- compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T)) 
@@ -350,13 +365,17 @@ module BSystems where
   WkCtxtSort BS T = sym (wk≡ (wk-is-homomorphism BS T) T)
 
   wkCtxtIsHomomorphism : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) → is-homomorphism Bᵇ (TopPre Bᵇ Γ) (wkCtxt Bᵇ Γ)
-  wkCtxtIsHomomorphism {Bᵇ = Bᵇ} BS ε = IdIsHomomorphism Bᵇ
+  wkCtxtIsHomomorphism {Bᵇ = Bᵇ} BS ε = {! IdIsHomomorphism Bᵇ !}
   wkCtxtIsHomomorphism BS (T ⊳ Γ) = ○-homomorphism (wk-is-homomorphism BS T) (wkCtxtIsHomomorphism (BSlc BS T) Γ)
 
-  transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
-  transportSplit p f g i .Ty↝ T = sym ((cong (λ x → (transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g x))) ((transportRefl (Ty↝ f T)))) 
-      ∙ (sym (cong (λ x → transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g (Ty↝ f x))) (transportRefl T)))) i 
-  transportSplit p f g i .Tm↝ T t = {!   !}
-  transportSplit p f g i .Slc↝ T = {!   !}
+  transportSplitTy↝ : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) (T : Typ A)
+      → Ty↝ (transport (λ i → (A ↝ (p i))) (g ○ f)) T ≡ (Ty↝ ((transport (λ i → B ↝ (p i)) g) ○ f) T)
+  transportSplitTy↝ p f g T i = sym ((cong (λ x → (transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g x))) ((transportRefl (Ty↝ f T)))) 
+      ∙ (sym (cong (λ x → transp (λ i₁ → Typ (p i₁)) i0 (Ty↝ g (Ty↝ f x))) (transportRefl T)))) i
 
+  transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
+  transportSplit {A = A} {B = B} {C = C} {D = D} refl f g = {!    !}
+
+ 
+ 
  

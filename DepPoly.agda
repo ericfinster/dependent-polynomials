@@ -175,3 +175,5 @@ module DepPoly where
   Tm (Free M) = W M
   ⇑ (Free M) w = M ↑w w 
 
+
+

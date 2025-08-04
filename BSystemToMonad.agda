@@ -202,12 +202,12 @@ module BSystemToMonad where
             (BSystemToMonad-μ-Help  BS BS (BSystem.BSlc BS T) Γ fst₁ (SubstToHom fst₂) (NeededSubst BS fst₁ T snd₁) (SubstToHomHomomorphism fst₂))
 
 
-{-
 
-    this is all written to work without the rewrite
 
-    !!! The η definition needs to be reworked since I simplified BSystemToDepPolyHelp to take the already sliced BSystem and not the original BSystem and a type !!!
-    !!! This hopeully simplifies μ but probably implies one needs to rework some of the equalities !!!
+    -- this is all written to work without the rewrite
+
+    -- !!! The η definition needs to be reworked since I simplified BSystemToDepPolyHelp to take the already sliced BSystem and not the original BSystem and a type !!!
+    -- !!! This hopeully simplifies μ but probably implies one needs to rework some of the equalities !!!
 
     -- -- -- Definition of η
 
@@ -230,7 +230,7 @@ module BSystemToMonad where
                 (PreBSystem.sub (CtxToPreSys BS (T ► ϵ)) 
                 (_↝_.Ty↝ (TerminalProj BS (T ► ϵ)) T) (PreBSystem.var Bᵇ T) 
                 ○ x)) 
-                (proj-slc (TerminalProj BS (T ► ϵ)) (PreBSystem.wk Bᵇ T) (EqTerProj BS T) T) ⟩
+                (proj-slc (EqTerProj BS T) T) ⟩
             PreBSystem.sub (CtxToPreSys BS (T ► ϵ))
             (_↝_.Ty↝ (TerminalProj BS (T ► ϵ)) T) (PreBSystem.var Bᵇ T)
             ○ _↝_.Slc↝ (PreBSystem.wk Bᵇ T) T
@@ -267,22 +267,25 @@ module BSystemToMonad where
     -- and can't just be handled by cong or something simillar
     -- IdStr can be used since we have NeededSubstIsId
     DepPolyHelpIsTrivialStep : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
-            → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
+            → (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (idStr (TyTmStr.Slc B T)))
             ≡ BSystemToDepPoly (BSystem.BSlc BS T)
     DepPolyHelpIsTrivialStep BS T i .Tm x x₁ = refl {x = TyTmStr.Tm (CtxToTyTmStr (BSystem.BSlc BS T) x) (_↝_.Ty↝ (TerminalProj (BSystem.BSlc BS T) x) x₁)} i
-    DepPolyHelpIsTrivialStep BS T i .⇑ {Γ} {T'} t = cong (λ x → transport (λ i₁ →
-            DepPoly (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ (~ i₁)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
-            (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc BS T) Γ T' x)) (DepPolyHelpIsTrivialHom BS T Γ T' t ) i
+    DepPolyHelpIsTrivialStep BS T i .⇑ {Γ} {T'} t =  BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc (BSystem.BSlc BS T) T') Γ (DepPolyHelpIsTrivialHom BS T Γ T' t i)
+
+
+            -- cong (λ x → transport (λ i₁ →
+            -- DepPoly (⌈ BSystem.BSlc BS T ⌉BSysEqual Γ (~ i₁)) (BSystemToTyStr (BSystem.BSlc (BSystem.BSlc BS T) T')))
+            -- (BSystemToDepPolyHelp (BSystem.BSlc BS T) (BSystem.BSlc (BSystem.BSlc BS T) T') Γ x))(DepPolyHelpIsTrivialHom BS T Γ T' t ) i
 
 
     -- This is the central equality since we can then reduce DepPolyHelp to BSystemToDepPoly BS and recursively apply BSystemToMonad-η
 
     DepPolyHelpIsTrivial : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : TyTmStr.Typ B)
-            → (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
+            → (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
                 ≡ BSystemToDepPoly (BSystem.BSlc BS T)
-    DepPolyHelpIsTrivial {B} {Bᵇ} BS T = (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
-        ≡⟨ cong (λ x → BSystemToDepPolyHelp BS BS (T ► ϵ) T x) (NeededSubstIsID BS T) ⟩
-            (BSystemToDepPolyHelp BS BS (T ► ϵ) T (idStr (TyTmStr.Slc B T)))
+    DepPolyHelpIsTrivial {B} {Bᵇ} BS T = (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
+        ≡⟨ cong (λ x → BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) x) (NeededSubstIsID BS T) ⟩
+            (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (idStr (TyTmStr.Slc B T)))
         ≡⟨ DepPolyHelpIsTrivialStep BS T ⟩      
             BSystemToDepPoly (BSystem.BSlc BS T)
         ∎ 
@@ -293,23 +296,25 @@ module BSystemToMonad where
         → IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒
             transport (λ i →
             DepPoly (BSystemToTyStr (BSystem.BSlc BS T)) (BSystemToTyStr (BSystem.BSlc BS T)))
-            (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
+            (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T)))
         ≡ IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒
-            BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))
+            BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))
     Eq-η {Bᵇ = Bᵇ} BS T = cong (λ x → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T)) ⇒ x)) 
-        (transportRefl (BSystemToDepPolyHelp BS BS (T ► ϵ) T (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))))
+        (transportRefl (BSystemToDepPolyHelp BS (BSystem.BSlc BS T) (T ► ϵ) (NeededSubst BS (T ► ϵ) T (PreBSystem.var Bᵇ T))))
 
 
     {-# TERMINATING #-}
     BSystemToMonad-η : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) 
         → IdPoly (BSystemToTyStr BS) ⇒ BSystemToDepPoly BS
     BSystemToMonad-η {Bᵇ = Bᵇ} BS .Tm⇒ {Γ} {T} (idT .T) = PreBSystem.var Bᵇ T
-    BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (Iso.fun (pathToIso (sym (Eq-η BS T))))     
-        (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (DepPolyHelpIsTrivial BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
--}
+    BSystemToMonad-η BS .⇑⇒ {Γ} {T} (idT _) = (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (DepPolyHelpIsTrivial BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
+
+    -- (Iso.fun (pathToIso (sym (Eq-η BS T))))     
+    --     (transport (λ i → (IdPoly (BSystemToTyStr (BSystem.BSlc BS T))) ⇒ (DepPolyHelpIsTrivial BS T (~ i))) (BSystemToMonad-η (BSystem.BSlc BS T)))
+
 
     BSystemToMonad : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) → (Monad (BSystemToTyStr BS))
     BSystemToMonad BS .Monad.P = BSystemToDepPoly BS
     BSystemToMonad BS .Monad.μ = BSystemToMonad-μ BS
-    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = {!   !}
+    BSystemToMonad {Bᵇ = Bᵇ} BS .Monad.η = BSystemToMonad-η BS
         
