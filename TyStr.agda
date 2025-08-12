@@ -124,3 +124,5 @@ module TyStr where
   Ty (𝕋 ⊗ 𝕊) = Ty 𝕋 × Ty 𝕊
   _//_ (𝕋 ⊗ 𝕊) (T , S) = (𝕋 // T) ⊗ (𝕊 // S)
 
+  -- wkStructure : {𝕋 : TyStr} (T : Ty 𝕋) → 
+

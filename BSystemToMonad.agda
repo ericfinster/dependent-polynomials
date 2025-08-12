@@ -29,6 +29,7 @@ module BSystemToMonad where
                       (SubstToHomHelp ɣ) ○ (TerminalProj BS (T ► Δ'')) 
     TransportEq {B = B} AS BS {Γ₁ = Γ₁} {Γ'' = Γ''} {T = T} {Δ'' = Δ''} ɣ = transportSplit (TopTyTm++BSys AS Γ₁ Γ'') (TerminalProj BS (T ► Δ'')) (SubstToHomHelp ɣ)
 
+    -- this needs sub-of-wk-Tm via NeededSubstGenTriv
     Eq3Diverge : {A : TyTmStr} {B : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} 
                 {AS : BSystem A Aᵇ} {BS : BSystem B Bᵇ} {Γ : Ctx (BSystemToTyStr AS)} 
                 {f : B ↝ (CtxToTyTmStr AS Γ)} {Γ' : Ctx (BSystemToTyStr (CtxToBSys AS Γ))}

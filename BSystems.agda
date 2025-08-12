@@ -1,6 +1,7 @@
-{-# OPTIONS --allow-unsolved-metas #-}
+-- {-# OPTIONS --allow-unsolved-metas #-}
  
 open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.GroupoidLaws
 
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Transport
@@ -22,6 +23,15 @@ module BSystems where
       Slc : Typ → TyTmStr -- this is ft^-1
 
   open TyTmStr
+
+  record isSetStr (B : TyTmStr) : Type₁ where
+    coinductive
+    field
+      TypIsSet : isSet (Typ B) 
+      TmIsSet : (T : Typ B) → isSet (Tm B T)
+      SlcIsSet : (T : Typ B) → (isSetStr (Slc B T))
+
+  open isSetStr
 
   ΣStructure : {I : Type} (A : I → TyTmStr) → TyTmStr
   ΣStructure {I} A .Typ = Σ[ i ∈ I ] Typ (A i)
@@ -80,10 +90,6 @@ module BSystems where
 
   open _↝_
 
-  HomIsSet : (A B : TyTmStr) → (isSet (A ↝ B))
-  HomIsSet A B x y x₁ y₁ i i₁ .Ty↝ T = {!   !}
-  HomIsSet A B x y x₁ y₁ i i₁ .Tm↝ = {!   !}
-  HomIsSet A B x y x₁ y₁ i i₁ .Slc↝ = {!   !}
 
   -- -- -- Composition and identity of Morphisms
 
@@ -117,6 +123,23 @@ module BSystems where
 
   proj-slc : {A B : TyTmStr} {f g : A ↝ B} → (p : f ≡ g) → (T : Typ A) → PathP (λ i → (Slc A T) ↝ (Slc B (proj-ty p T i))) (Slc↝ f T) (Slc↝ g T)
   proj-slc p T i = Slc↝ (p i) T
+
+
+
+
+  isSetHomTy : (A B : TyTmStr) (a : isSetStr A) (b : isSetStr B) (f : A ↝ B) (g : A ↝ B) 
+      (eq₁ : f ≡ g) (eq₂ : f ≡ g) (T : Typ A) → (proj-ty eq₁ T) ≡ (proj-ty eq₂ T)
+  isSetHomTy A B a b f g eq₁ eq₂ T = TypIsSet b (Ty↝ f T) (Ty↝ g T)
+      (λ i → Ty↝ (eq₁ i) T) (λ i → Ty↝ (eq₂ i) T)
+
+  {-# TERMINATING #-}
+  HomIsSet : (A B : TyTmStr) (a : isSetStr A) (b : isSetStr B) → (isSet (A ↝ B))
+  HomIsSet A B a b x y x₁ y₁ i i₁ .Ty↝ T = isSetHomTy A B a b x y x₁ y₁ T i i₁
+  HomIsSet A B a b x y x₁ y₁ i i₁ .Tm↝ T t = isSet→SquareP (λ j j₁ → (TmIsSet b (isSetHomTy A B a b x y x₁ y₁ T j j₁)))
+      (λ i → (Tm↝ (x₁ i) T t)) (λ i → (Tm↝ (y₁ i) T t)) (λ i → (Tm↝ x T t)) (λ i → (Tm↝ y T t)) i i₁
+  HomIsSet A B a b x y x₁ y₁ i i₁ .Slc↝ T = isSet→SquareP (λ j j₁ → (HomIsSet (Slc A T) (Slc B (isSetHomTy A B a b x y x₁ y₁ T j j₁))
+      (SlcIsSet a T) (SlcIsSet b (isSetHomTy A B a b x y x₁ y₁ T j j₁))))
+      (λ i → (Slc↝ (x₁ i) T)) (λ i → (Slc↝ (y₁ i) T)) (λ i → (Slc↝ x T)) (λ i → (Slc↝ y T)) i i₁
 
   -- Intoduction
 
@@ -243,21 +266,29 @@ module BSystems where
           wk Bᵇ T ○ idStr B
       ∎
 
-  IdIsHomomorphismVar : {B : TyTmStr} (Bᵇ : PreBSystem B) (T : Typ B)
-      → var Bᵇ T ≡ transport (λ j → Tm (Slc B T) (Ty↝ (IdIsHomomorphsimwk Bᵇ T j) T)) (var Bᵇ T)
-  IdIsHomomorphismVar {B} Bᵇ T i = {!   !}
+  IdTest : {B : TyTmStr} (Bᵇ : PreBSystem B) (b : isSetStr B) (T : Typ B)
+      → cong (λ x → (Ty↝ x T)) (IdIsHomomorphsimwk Bᵇ T) ≡ λ i → (Ty↝ (wk Bᵇ T) T)
+  IdTest Bᵇ b T  = TypIsSet (SlcIsSet b T) (Ty↝ (wk Bᵇ T) T) (Ty↝ (wk Bᵇ T) T)
+      (cong (λ x → (Ty↝ x T)) (IdIsHomomorphsimwk Bᵇ T)) 
+      (λ i → (Ty↝ (wk Bᵇ T) T))
 
 
-  IdIsHomomorphism : {B : TyTmStr} (Bᵇ : PreBSystem B) → is-homomorphism Bᵇ Bᵇ (idStr B)
-  IdIsHomomorphism {B} Bᵇ .wk≡ T = IdIsHomomorphsimwk Bᵇ T
-  IdIsHomomorphism {B} Bᵇ .sub≡ T t = (idStr B ○ sub Bᵇ T t)
+  IdIsHomomorphismVar : {B : TyTmStr} (Bᵇ : PreBSystem B) (b : isSetStr B) (T : Typ B)
+      → PathP (λ i → Tm (Slc B T) (Ty↝ (IdIsHomomorphsimwk Bᵇ T i) T)) (var Bᵇ T) (var Bᵇ T) 
+  IdIsHomomorphismVar {B} Bᵇ b T = subst (λ x → PathP (λ i → (Tm (Slc B T) (x i))) (var Bᵇ T) (var Bᵇ T)) (sym (IdTest Bᵇ b T)) refl
+
+
+
+  IdIsHomomorphism : {B : TyTmStr} (Bᵇ : PreBSystem B) (b : isSetStr B) → is-homomorphism Bᵇ Bᵇ (idStr B)
+  IdIsHomomorphism {B} Bᵇ b .wk≡ T = IdIsHomomorphsimwk Bᵇ T
+  IdIsHomomorphism {B} Bᵇ b .sub≡ T t = (idStr B ○ sub Bᵇ T t)
       ≡⟨ IdStrLN (sub Bᵇ T t) ⟩
         sub Bᵇ T t
       ≡⟨ sym (IdStrRN (sub Bᵇ T t)) ⟩
         sub Bᵇ T t ○ idStr (Slc B T)   
       ∎
-  IdIsHomomorphism {B = B} Bᵇ .var≡ T i = {! var Bᵇ T !}
-  IdIsHomomorphism Bᵇ .SlcHomomorphism T = {! IdIsHomomorphism (slc Bᵇ T) !} 
+  IdIsHomomorphism {B = B} Bᵇ b .var≡ T = IdIsHomomorphismVar Bᵇ b T
+  IdIsHomomorphism Bᵇ b .SlcHomomorphism T = IdIsHomomorphism (slc Bᵇ T) (SlcIsSet b T) 
 
   wkCtxtCommutes : {B C : TyTmStr} (Bᵇ : PreBSystem B) (Cᵇ : PreBSystem C) (Γ : Ctxt B) (f : B ↝ C)
     (H : is-homomorphism Bᵇ Cᵇ f)
@@ -292,6 +323,33 @@ module BSystems where
         (wk Cᵇ (Ty↝ g (Ty↝ f T))) ○ (g ○ f)
       ∎
 
+  CompTest : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
+        (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g) (a : isSetStr A) (b : isSetStr B) (c : isSetStr C) (T : Typ A)
+        → cong (λ x → Ty↝ x T) (○-homomorphismwk Hf Hg T) ≡ (λ z → (Slc↝ g (Ty↝ f T) .Ty↝ (Ty↝ (wk≡ Hf T z) T))) ∙ (λ i → (Ty↝ (Hg .wk≡ (Ty↝ f T) i) (Ty↝ f T)))
+  CompTest {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg a b c T = TypIsSet (SlcIsSet c (Ty↝ (g ○ f) T)) 
+      (Ty↝ ((Slc↝ (g ○ f) T) ○ (wk Aᵇ T)) T) (Ty↝ ((wk Cᵇ (Ty↝ (g ○ f) T)) ○ (g ○ f)) T)
+      (cong (λ x → Ty↝ x T) (○-homomorphismwk Hf Hg T)) ((λ z → (Slc↝ g (Ty↝ f T) .Ty↝ (Ty↝ (wk≡ Hf T z) T))) ∙ (λ i → (Ty↝ (Hg .wk≡ (Ty↝ f T) i) (Ty↝ f T))))
+
+  PathCompFunc : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
+        (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g) (a : isSetStr A) (b : isSetStr B) (c : isSetStr C) (T : Typ A)
+        → cong (λ x → Tm (Slc C (Ty↝ g (Ty↝ f T))) x) ((λ z → (Slc↝ g (Ty↝ f T) .Ty↝ (Ty↝ (wk≡ Hf T z) T))) ∙ (λ i → (Ty↝ (Hg .wk≡ (Ty↝ f T) i) (Ty↝ f T))))
+            ≡ (λ j → ((λ z → Tm (Slc C (g .Ty↝ (Ty↝ f T))) (Slc↝ g (Ty↝ f T) .Ty↝ (Ty↝ (wk≡ Hf T z) T)))
+                ∙ (λ i → Tm (Slc C (Ty↝ g (Ty↝ f T))) (Ty↝ (Hg .wk≡ (Ty↝ f T) i) (Ty↝ f T)))) j)
+  PathCompFunc {C = C} {f = f} {g = g} Hf Hg a b c T = cong-∙ (λ x → Tm (Slc C (Ty↝ g (Ty↝ f T))) x) 
+      (λ z → (Slc↝ g (Ty↝ f T) .Ty↝ (Ty↝ (wk≡ Hf T z) T))) 
+        (λ i → (Ty↝ (Hg .wk≡ (Ty↝ f T) i) (Ty↝ f T)))
+
+
+  CompFinal :  {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
+        (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g) (a : isSetStr A) (b : isSetStr B) (c : isSetStr C) (T : Typ A)
+        → PathP ((λ i → Tm (Slc C (Ty↝ g (Ty↝ f T))) (Ty↝ (○-homomorphismwk Hf Hg T i) T))) 
+            ((Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (Slc↝ f T) (Ty↝ (wk Aᵇ T) T)) (Tm↝ (Slc↝ f T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)))) 
+              ((var Cᵇ (Ty↝ g (Ty↝ f T))))
+  CompFinal {C = C} {Aᵇ = Aᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg a b c T = subst (λ x → x
+      (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (Slc↝ f T) (Ty↝ (wk Aᵇ T) T)) (Tm↝ (Slc↝ f T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) (var Cᵇ (Ty↝ g (Ty↝ f T))))
+      ((sym (cong (λ x → PathP (λ i → (x i))) (PathCompFunc Hf Hg a b c T))) ∙ (sym (cong (λ x → PathP (λ i →  Tm (Slc C (Ty↝ g (Ty↝ f T))) (x i))) (CompTest Hf Hg a b c T))))
+      (compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T)))
+
 
   ○-homomorphism : {A B C : TyTmStr} {Aᵇ : PreBSystem A} {Bᵇ : PreBSystem B} {Cᵇ : PreBSystem C} {f : A ↝ B} {g : B ↝ C}
         (Hf : is-homomorphism Aᵇ Bᵇ f) (Hg : is-homomorphism Bᵇ Cᵇ g) 
@@ -309,15 +367,8 @@ module BSystems where
       ≡⟨ ○-assoc (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) (Slc↝ g (Ty↝ f T)) (Slc↝ f T) ⟩
         (sub Cᵇ (Ty↝ g (Ty↝ f T)) (Tm↝ g (Ty↝ f T) (Tm↝ f T t))) ○ ((Slc↝ g (Ty↝ f T)) ○ (Slc↝ f T))
       ∎
-  ○-homomorphism {C = C} {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .var≡ T i = {! compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T)) i !} -- var≡ Hg (Ty↝ f T)   var≡ Hf T    Tm↝ (Slc↝ g (Ty↝ f T))  (Ty↝ (wk≡ Hf T i) T)   
+  ○-homomorphism {C = C} {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .var≡ T = {!  compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T))  !}   
   ○-homomorphism {Aᵇ = Aᵇ} {Bᵇ = Bᵇ} {Cᵇ = Cᵇ} {f = f} {g = g} Hf Hg .SlcHomomorphism T = ○-homomorphism (SlcHomomorphism Hf T) (SlcHomomorphism Hg (Ty↝ f T))
-
-    -- compPathP (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) (var≡ Hg (Ty↝ f T)) 
-    -- (λ i → (Tm↝ (Slc↝ g (Ty↝ f T)) (Ty↝ (wk≡ Hf T i) T) (var≡ Hf T i))) 
-
-    -- transport-filler (λ i →
-    --      Tm (Slc C (Ty↝ g (Ty↝ f T)))
-    --      (Ty↝ (○-homomorphismwk Hf Hg T (~ i)) T)) (var Cᵇ (Ty↝ g (Ty↝ f T)))
 
 
   -- -- next try for substitutions
@@ -360,6 +411,11 @@ module BSystems where
   
   open BSystem
 
+  TopBSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) 
+    → BSystem (TopTyTm Γ) (TopPre Bᵇ Γ)
+  TopBSys BS ε = BS
+  TopBSys BS (T ⊳ Γ) = TopBSys (BSystem.BSlc BS T) Γ
+
 
   WkCtxtSort : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (T : Typ B) → (wk (slc Bᵇ T) (Ty↝ (wk Bᵇ T) T)) ○ (wk Bᵇ T) ≡ ((Slc↝ (wk Bᵇ T) T) ○ (wk Bᵇ T))
   WkCtxtSort BS T = sym (wk≡ (wk-is-homomorphism BS T) T)
@@ -378,4 +434,4 @@ module BSystems where
 
  
  
- 
+      

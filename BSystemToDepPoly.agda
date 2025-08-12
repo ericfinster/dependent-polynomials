@@ -248,6 +248,13 @@ module BSystemToDepPoly where
                 → NeededSubst BS Γ T t ○ (PreBSystem.wk Bᵇ T) ≡ TerminalProj BS Γ
     NeededSubstTriv BS Γ T t = NeededSubstGenTriv BS BS Γ (TerminalProj BS Γ) T t (TerProjIsHomomorphism BS Γ)
 
+--     NeededSubstVar : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctx (BSystemToTyStr BS)) (T : TyTmStr.Typ B) (t : TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (TerminalProj BS Γ) T))
+--                 → PathP (λ i → TyTmStr.Tm (CtxToTyTmStr BS Γ) (_↝_.Ty↝ (NeededSubstTriv BS Γ T t i) T)) 
+--                 (_↝_.Tm↝ (NeededSubst BS Γ T t) (_↝_.Ty↝ (PreBSystem.wk Bᵇ T) T) (PreBSystem.var Bᵇ T)) t
+--     NeededSubstVar BS Γ T t i = {!   !}
+
+                -- _↝_.Tm↝ (NeededSubst BS Γ T t) (_↝_.Ty↝ (PreBSystem.wk Bᵇ T) T) (PreBSystem.var Bᵇ T) 
+
     -- Needed since when lifitng the domain and codomain BSystems diverge 
 
     {-# TERMINATING #-}
