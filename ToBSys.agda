@@ -20,13 +20,13 @@ module ToBSys where
     -- I think wk needs to be postulated for the TyStr
     -- I'll expect subst to be μ 
     -- var should be η
-    MonadToPreSys : {T : TyStr} (M : Monad T) → (PreBSystem (DepPolyToTyTm (Monad.P M)))
-    MonadToPreSys M .PreBSystem.wk T ._↝_.Ty↝ (fst₁ , snd₁) = {!  !}
-    MonadToPreSys M .PreBSystem.wk T ._↝_.Tm↝ = {!   !}
-    MonadToPreSys M .PreBSystem.wk T ._↝_.Slc↝ = {!   !}
-    MonadToPreSys M .PreBSystem.sub T t = {! ⇑ (Monad.P M) t   !}
-    MonadToPreSys M .PreBSystem.var T = {!    !}
-    MonadToPreSys M .PreBSystem.slc = {!   !}  
+    MonadToPreSys : {T : TyStr} (M : Monad T) (WkP : WkPoly (Monad.P M)) → (PreBSystem (DepPolyToTyTm (Monad.P M)))
+    MonadToPreSys M WkP .PreBSystem.wk T ._↝_.Ty↝ (fst₁ , snd₁) = {!  !}
+    MonadToPreSys M WkP .PreBSystem.wk T ._↝_.Tm↝ = {!   !}
+    MonadToPreSys M WkP .PreBSystem.wk T ._↝_.Slc↝ = {!   !}
+    MonadToPreSys M WkP .PreBSystem.sub T t = {! ⇑ (Monad.P M) t   !}
+    MonadToPreSys M WkP .PreBSystem.var T = {!    !}
+    MonadToPreSys M WkP .PreBSystem.slc = {!   !}  
 
     BSysMonadToPreSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ)
         → (PreBSystem (DepPolyToTyTm (Monad.P (BSystemToMonad BS))))

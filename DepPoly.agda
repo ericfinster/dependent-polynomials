@@ -18,6 +18,23 @@ module DepPoly where
         → DepPoly ⌈ Γ ⌉ (𝕋 // T)
 
   open DepPoly public 
+
+  -- to get a complete WkStr we need also a weakening structure on types 
+  record WkPoly {𝕊 𝕋 : TyStr} (P : DepPoly 𝕊 𝕋) : Type₁ where
+    coinductive
+    field
+      wk : (Γ : Ctx 𝕊) (T : Ty 𝕋) (T' : Ty ⌈ Γ ⌉) → Tm P Γ T → Tm P (WkCtx Γ T') T 
+      wk-⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T) → WkPoly (⇑ P t)
+
+  
+  -- this seems to be the more natural notion when working out the set theoretic view
+  -- since then one can retreat back to spans
+  record CtxtPoly2 (𝕊 𝕋 : TyStr) : Type₁ where
+    coinductive
+    field
+      Tm : Ty (CtxStr 𝕊) → Ty 𝕋 → Type
+      ⇑ : {Γ : Ty (CtxStr 𝕊)} {T : Ty 𝕋} (t : Tm Γ T)
+        → CtxtPoly2 ⌈ Γ ⌉ (𝕋 // T)
   
   -- needs a dependent path but I'm not sure how to define it
   -- maybe this can be done using a substitution
@@ -45,6 +62,21 @@ module DepPoly where
   ⌈_⌉s {M = M} (● Γ) .Tm Γ' x₁ = M .Tm (Γ ++ Γ') x₁
   ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (λ i → (DepPoly (++-ceil Γ Γ₁ i)) (𝕋 // T)) (M .⇑ t)
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
+
+  record SubPoly {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Type₁ where
+    coinductive
+    field
+      subHom : {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
+        → Subst M Γ Δ → Hom ⌈ Δ ⌉ ⌈ Γ ⌉
+      subExt : {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst M Γ Δ)
+        → DepPoly (ImgStr (subHom σ)) 𝕊 
+      sub-⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm M Γ T) → SubPoly (⇑ M t)
+
+        
+      -- sub-⇑ : {Γ : Ctx 𝕊} {Δ : Ctx 𝕊} (σ : Subst M Γ Δ) 
+      --   → PathP (λ i → Hom (⌈ Γ ⌉) (⌈ Δ ⌉)) (sub σ) (sub σ)
+      --     → (⇑ M (Tm M Γ (Ty ⌈ Δ ⌉) (sub σ))) ≡ (⌈ σ ⌉s)
+  
 
   -- ++-sub : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
   --   → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
@@ -177,3 +209,4 @@ module DepPoly where
 
 
 
+  

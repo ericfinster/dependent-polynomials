@@ -1,4 +1,4 @@
--- {-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --allow-unsolved-metas #-}
  
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.GroupoidLaws
@@ -251,7 +251,6 @@ module BSystems where
     field
       wk≡ :  (T : Typ A) → ((Slc↝ ϕ T) ○ (wk Aᵇ T)) ≡ (wk Bᵇ (ϕ .Ty↝ T)) ○ ϕ
       sub≡ : (T : Typ A) → (t : Tm A T) → (ϕ ○ (sub Aᵇ T t)) ≡ ((sub Bᵇ (Ty↝ ϕ T) (Tm↝ ϕ T t)) ○ (Slc↝ ϕ T))
-      -- var≡ : (T : Typ A) → (Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) ≡ transport (λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (~ i)) T)) (var Bᵇ (Ty↝ ϕ T)) -- I should check if this is actually equal to the PathP
       var≡ : (T : Typ A) → PathP ((λ i → Tm (Slc B (Ty↝ ϕ T)) (Ty↝ (wk≡ T (i)) T))) ((Tm↝ (Slc↝ ϕ T) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ((var Bᵇ (Ty↝ ϕ T)))
       SlcHomomorphism : (T : Typ A) → is-homomorphism (slc Aᵇ T) (slc Bᵇ (Ty↝ ϕ T)) (Slc↝ ϕ T)
   
@@ -407,9 +406,34 @@ module BSystems where
       sub-of-wk-Tm : {T : Typ A} (t : Tm A T) → ((sub Aᵇ T t) ○ (wk Aᵇ T)) ≡ (idStr A)
       sub-of-wk-Typ : (T : Typ A) → ((sub (slc Aᵇ T) (Ty↝ (Aᵇ .wk T) T) (var Aᵇ T)) ○ (Slc↝ (wk Aᵇ T)) T) ≡ (idStr (Slc A T))
       Variable-sub : {T : Typ A} → (t : Tm A T) → (transport (λ i → (Tm A ((Ty↝ (sub-of-wk-Tm t i)) T))) (Tm↝ (sub Aᵇ T t) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T))) ≡ t
-      BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) -- this maybe makes SlcHomomorphism redundant at least from a BSystem viewpoint
+      BSlc : (T : Typ A) → BSystem (Slc A T) (slc Aᵇ T) 
   
   open BSystem
+
+  -- -- -- Isomorphism between terms and homs
+
+  record SubHom {A : TyTmStr} (Aᵇ : PreBSystem A) (T : Typ A) : Type where
+    field
+      f : (Slc A T) ↝ A
+      sect : (f ○ (wk Aᵇ T)) ≡ idStr A
+  
+  open SubHom
+
+  ToTm : {A : TyTmStr} {Aᵇ : PreBSystem A} {T : Typ A} → SubHom Aᵇ T → Tm A T
+  ToTm {A} {Aᵇ} {T} sh = transport (λ i → Tm A ((Ty↝ (sect sh i)) T)) (Tm↝ (f sh) (Ty↝ (wk Aᵇ T) T) (var Aᵇ T)) 
+
+  ToHom : {A : TyTmStr} (Aᵇ : PreBSystem A) (AS : BSystem A Aᵇ) {T : Typ A} (t : Tm A T) → SubHom Aᵇ T 
+  ToHom {A} Aᵇ AS {T} t .f = sub Aᵇ T t
+  ToHom {A} Aᵇ AS {T} t .sect = sub-of-wk-Tm AS t
+
+  Rinv : {A : TyTmStr} (Aᵇ : PreBSystem A) (AS : BSystem A Aᵇ) {T : Typ A} (t : Tm A T) → ToTm (ToHom Aᵇ AS t) ≡ t
+  Rinv Aᵇ AS t = Variable-sub AS t 
+
+  Linv : {A : TyTmStr} {Aᵇ : PreBSystem A} (AS : BSystem A Aᵇ) {T : Typ A} (sh : SubHom Aᵇ T) → ToHom Aᵇ AS (ToTm sh) ≡ sh
+  Linv AS sh i .f .Ty↝ x = {!   !}
+  Linv AS sh i .f .Tm↝ T x = {!   !}
+  Linv AS sh i .f .Slc↝ T = {!   !}
+  Linv AS sh i .sect = {!   !}
 
   TopBSys : {B : TyTmStr} {Bᵇ : PreBSystem B} (BS : BSystem B Bᵇ) (Γ : Ctxt B) 
     → BSystem (TopTyTm Γ) (TopPre Bᵇ Γ)
@@ -432,6 +456,6 @@ module BSystems where
   transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
   transportSplit {A = A} {B = B} {C = C} {D = D} refl f g = {!    !}
 
- 
- 
+  
+   
       

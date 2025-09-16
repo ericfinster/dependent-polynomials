@@ -24,9 +24,33 @@ module TyStr where
     ϵ : Ctx 𝕋 
     _►_ : (T : Ty 𝕋) → (Γ : Ctx (𝕋 // T)) → Ctx 𝕋 
 
+  record Hom (𝕊 𝕋 : TyStr) : Type₁ where
+    coinductive
+    field
+      ty : Ty 𝕊 → Ty 𝕋
+      //Hom : (S : Ty 𝕊) → Hom (𝕊 // S) (𝕋 // (ty S))
+
+  open Hom public
+
+  ImgStr : {𝕊 𝕋 : TyStr} (f : Hom 𝕊 𝕋) → TyStr
+  ImgStr {𝕊} {𝕋} f .Ty = Σ[ T ∈ Ty 𝕊 ] Σ[ T' ∈ Ty 𝕋 ] (ty f T ≡ T')
+  ImgStr f // (fst₁ , fst₂ , snd₁) = ImgStr (//Hom f fst₁)
+      
+
+  record WkStr (𝕋 : TyStr) : Type₁ where
+    coinductive
+    field
+      wk : (T : Ty 𝕋) → Hom 𝕋 (_//_ 𝕋 T)
+      liftStr : (T : Ty 𝕋) → WkStr (_//_ 𝕋 T) 
+
+
   ⌈_⌉ : {𝕋 : TyStr} → Ctx 𝕋 → TyStr
   ⌈_⌉ {𝕋} ϵ = 𝕋
   ⌈_⌉ (T ► Γ) = ⌈ Γ ⌉  
+
+  WkCtx : {𝕋 : TyStr} (Γ : Ctx 𝕋) (T : Ty ⌈ Γ ⌉) → Ctx 𝕋
+  WkCtx ϵ T = T ► ϵ
+  WkCtx (T₁ ► Γ) T = T₁ ► (WkCtx Γ T)
 
   CtxStep : {𝕋 : TyStr} (Γ : Ctx 𝕋) → TyStr
   CtxStep {𝕋} ϵ = 𝕋
