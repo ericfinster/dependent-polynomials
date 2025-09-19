@@ -2,6 +2,8 @@
 --  DepPoly.agda - Dependent Polynomials
 --
 
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Transport
@@ -54,6 +56,30 @@ module DepPoly where
       → (Δ' : Ctx (𝕋 // T))
       → Subst (⇑ M t) Γ' Δ'
       → Subst M (Γ ++ Γ') (T ► Δ') 
+
+  SplitSubCtx : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
+    → Ctx 𝕊
+  SplitSubCtx ϵ Δ' σ = ϵ
+  SplitSubCtx (T ► Δ) Δ' (cns Γ .T t Γ' .(Δ ++ Δ') σ) = Γ ++ SplitSubCtx Δ Δ' σ
+
+  SplitSubCtxUp : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
+    → Ctx ⌈ (SplitSubCtx Δ Δ' σ) ⌉
+  SplitSubCtxUp {Γ = Γ} ϵ Δ' σ = Γ
+  SplitSubCtxUp (T ► Δ) Δ' (cns Γ .T t Γ' .(Δ ++ Δ') σ) = transport (λ i → Ctx (++-ceil Γ (SplitSubCtx Δ Δ' σ) (~ i))) (SplitSubCtxUp Δ Δ' σ) 
+
+  SplitSubCtxEq : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
+    → Γ ≡ (SplitSubCtx Δ Δ' σ ++ SplitSubCtxUp Δ Δ' σ)
+  SplitSubCtxEq ϵ Δ' σ = refl
+  SplitSubCtxEq (T ► Δ) Δ' (cns Γ .T t Γ' .(Δ ++ Δ') σ) = {!   !}
+  
+  SplitSub : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
+    → Subst M (SplitSubCtx Δ Δ' σ) Δ
+  SplitSub ϵ Δ' σ = ● ϵ
+  SplitSub (T ► Δ) Δ' (cns Γ .T t Γ' .(Δ ++ Δ') σ) = cns Γ T t (SplitSubCtx Δ Δ' σ) Δ (SplitSub Δ Δ' σ) 
   
   ⌈_⌉s : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋}
@@ -63,6 +89,12 @@ module DepPoly where
   ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (λ i → (DepPoly (++-ceil Γ Γ₁ i)) (𝕋 // T)) (M .⇑ t)
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
 
+  SplitSubUp : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
+    → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
+    → Subst ⌈ (SplitSub Δ Δ' σ) ⌉s (SplitSubCtxUp Δ Δ' σ) Δ'
+  SplitSubUp ϵ Δ' σ = {! σ  !}
+  SplitSubUp (T ► Δ) Δ' (cns Γ .T t Γ' .(Δ ++ Δ') σ) = {! SplitSubUp Δ Δ' σ  !}
+
   record SubPoly {𝕊 𝕋 : TyStr} (M : DepPoly 𝕊 𝕋) : Type₁ where
     coinductive
     field
@@ -71,6 +103,8 @@ module DepPoly where
       subExt : {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst M Γ Δ)
         → DepPoly (ImgStr (subHom σ)) 𝕊 
       sub-⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm M Γ T) → SubPoly (⇑ M t)
+
+
 
         
       -- sub-⇑ : {Γ : Ctx 𝕊} {Δ : Ctx 𝕊} (σ : Subst M Γ Δ) 
@@ -100,6 +134,32 @@ module DepPoly where
     Σ[ σ ∈ Subst M Γ Δ ]
     Tm N Δ T 
   ⇑ (M ⊚ N) (Δ , σ , t) = ⌈ σ ⌉s ⊚ ⇑ N t
+
+  -- this diverges on repeated application
+
+  SubCompDiverge : {𝕊 𝕋 𝕍 : TyStr} {M : DepPoly 𝕊 𝕋} {N : DepPoly 𝕋 𝕍}
+    → {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} {Φ : Ctx 𝕍}
+    → (σ : Subst M Γ Δ) 
+    → (τ : Subst N Δ Φ)
+    → Subst (M ⊚ N) Γ Φ
+  SubCompDiverge = {!   !}
+
+  SubComp : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋}
+    → {Γ : Ctx 𝕋} {Δ : Ctx 𝕋} {Φ : Ctx 𝕋}
+    → (σ : Subst M Γ Δ) 
+    → (τ : Subst M Δ Φ)
+    → Subst (M ⊚ M) Γ Φ
+  SubComp {𝕋} {M} {Γ} {Δ} {ϵ} σ τ = ● Γ
+  SubComp {𝕋} {M} {Γ} {Δ} {T ► Φ} σ (cns Γ₁ .T t Γ' .Φ τ) = transport (λ i → Subst (M ⊚ M) (SplitSubCtxEq Γ₁ Γ' σ (~ i)) (T ► Φ)) 
+      (cns (SplitSubCtx Γ₁ Γ' σ) T (Γ₁ , (SplitSub Γ₁ Γ' σ) , t) (SplitSubCtxUp Γ₁ Γ' σ) Φ (SubCompDiverge  (SplitSubUp Γ₁ Γ' σ) τ))  
+
+  -- one would need a method for the divergent case also, but the goal type scares me
+  SubCompIntro : {𝕋 : TyStr} {P : DepPoly 𝕋 𝕋} {Γ Φ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst P Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
+        → (φ : Subst P Φ Γ) → (Φ' : Ty ((CtxStr 𝕋) // Φ)) → (φ' : Subst ⌈ φ ⌉s Φ' Γ')
+        → Tm ⌈ (SubComp φ σ) ⌉s Φ' T'
+  SubCompIntro {𝕋} {P} {Γ} {Φ} {Δ} T' Γ' (● .Γ) t T'' φ Φ' φ' = {! Γ' , φ' , t  !}
+  SubCompIntro {𝕋} {P} {Γ} {Φ} {Δ} T' Γ' (cns Γ₁ T t₁ Γ'' Δ' σ) t T'' φ Φ' φ' = {! SubCompIntro T' Γ'   !}
+ 
 
 {-
   _*_ : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋} → {Γ Φ Δ : Ctx 𝕋} → (ɣ : Subst M Γ Φ) 
@@ -150,6 +210,12 @@ module DepPoly where
   -- ⌈ f ∣ cns Γ T t Γ' Δ' σ ⌉⇒ = {! transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉)  !}
 
   -- ⌈ ⇑⇒ f t ∣ σ ⌉⇒
+
+  AppSubst : {𝕊 𝕋 : TyStr} {P Q : DepPoly 𝕊 𝕋} (f : P ⇒ Q)
+    → {Γ : Ctx 𝕊} {Γ : Ctx 𝕊} {Δ : Ctx 𝕋} (σ : Subst P Γ Δ)
+    → (Γ' : Ctx ⌈ Γ ⌉) (T' : Ty ⌈ Δ ⌉) (t : Tm (⌈ σ ⌉s) Γ' T')
+    → Tm (⌈ Subst⇒ f σ ⌉s) Γ' T'
+  AppSubst f σ Γ' T' t = Tm⇒ (⌈ f ∣ σ ⌉⇒) t
 
 
   -- ⊚ is functorial in each argument
@@ -208,5 +274,5 @@ module DepPoly where
   ⇑ (Free M) w = M ↑w w 
 
 
-
-  
+    
+    
