@@ -57,6 +57,7 @@ module DepPoly where
       → Subst (⇑ M t) Γ' Δ'
       → Subst M (Γ ++ Γ') (T ► Δ') 
 
+
   SplitSubCtx : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))
     → Ctx 𝕊
@@ -88,6 +89,7 @@ module DepPoly where
   ⌈_⌉s {M = M} (● Γ) .Tm Γ' x₁ = M .Tm (Γ ++ Γ') x₁
   ⌈_⌉s {𝕋 = 𝕋} {M = M} {Γ} (● Γ) .⇑ {Γ₁} {T} t = transport (λ i → (DepPoly (++-ceil Γ Γ₁ i)) (𝕋 // T)) (M .⇑ t)
   ⌈_⌉s {M = M} (cns Γ T t Γ' Δ' σ) = transport (λ i → DepPoly (++-ceil Γ Γ' (~ i)) ⌈ Δ' ⌉) ⌈ σ ⌉s 
+
 
   SplitSubUp : {𝕊 𝕋 : TyStr} {M : DepPoly 𝕊 𝕋}
     → {Γ : Ctx 𝕊} (Δ : Ctx 𝕋) (Δ' : Ctx ⌈ Δ ⌉) (σ : Subst M Γ (Δ ++ Δ'))

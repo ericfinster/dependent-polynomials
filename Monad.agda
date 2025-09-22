@@ -46,34 +46,58 @@ module Monad where
 
 
 
+
     -- this probably needs to take substitutions instead of terms
-  record SubStr {𝕋 : TyStr} (M : Monad 𝕋) : Type₁ where
+    -- we could also realize this by coinductively generating new subst structures,
+    -- we would then need to abstract μ
+
+  record SubStr {𝕊 𝕋 𝕍 : TyStr} (P : DepPoly 𝕊 𝕋) (Q : DepPoly 𝕋 𝕍) (R : DepPoly 𝕊 𝕍) (μ : P ⊚ Q ⇒ R) : Type₁ where
     coinductive
     field
-      SubStrCtx : {Γ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
-        →  Ty ((CtxStr 𝕋) // Γ)
-      SubStrTm : {Γ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T)  
-        → Tm (⇑ (P M) t) (SubStrCtx T' t) T'
-      SubLift : {Γ Δ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
-        → (σ : Subst (P M) Δ Γ) → (Δ' : Ty ((CtxStr 𝕋) // Δ)) 
-        → (t' : Tm (⇑ (P M) (Tm⇒ (μ M) (Γ , σ , t))) Δ' T')
+      SubStrCtx : {Γ : Ctx 𝕋} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (t : Tm Q Γ T)
+        → Ctx ⌈ Γ ⌉
+      SubStrTm : {Γ : Ctx 𝕋} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (t : Tm Q Γ T)
+        → Tm (⇑ Q t) (SubStrCtx T' t) T'
+      Sublift : {Γ : Ctx 𝕋} {Δ : Ctx 𝕊} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (t : Tm Q Γ T)
+        → (σ : Subst P Δ Γ) → (Δ' : Ctx ⌈ Δ ⌉)
+        → (t' : Tm (⇑ R (Tm⇒ μ (Γ , σ , t))) Δ' T')
         → Subst ⌈ σ ⌉s Δ' (SubStrCtx T' t)
-      LiftEq : {Γ Δ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
-        → (σ : Subst (P M) Δ Γ) → (Δ' : Ty ((CtxStr 𝕋) // Δ)) 
-        → (t' : Tm (⇑ (P M) (Tm⇒ (μ M) (Γ , σ , t))) Δ' T')
-        → t' ≡ Tm⇒ (⇑⇒ (μ M) (Γ , σ , t)) ((SubStrCtx T' t) , ((SubLift T' t σ Δ' t') , SubStrTm T' t))
+      LiftEq : {Γ : Ctx 𝕋} {Δ : Ctx 𝕊} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (t : Tm Q Γ T)
+        → (σ : Subst P Δ Γ) → (Δ' : Ctx ⌈ Δ ⌉)
+        → (t' : Tm (⇑ R (Tm⇒ μ (Γ , σ , t))) Δ' T')
+        → t' ≡ Tm⇒ (⇑⇒ μ (Γ , σ , t)) ((SubStrCtx T' t) , ((Sublift T' t σ Δ' t') , SubStrTm T' t))
+      ⇑-SubStr : {Γ : Ctx 𝕋} {Δ : Ctx 𝕊} {T : Ty 𝕍} (t : Tm Q Γ T) (σ : Subst P Δ Γ)
+        → SubStr ⌈ σ ⌉s (⇑ Q t) (⇑ R (Tm⇒ μ (Γ , σ , t))) (⇑⇒ μ (Γ , σ , t))
 
-  -- the substitution cant be empty!
-  record SubStrSub {𝕋 : TyStr} (M : Monad 𝕋) : Type₁ where
-    field
-      S : SubStr M -- needed since we lif the morphism in SubLiftSub and therefore Sublift is not the same operation
-      SubStrSubCtx : {Γ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
-        → Ty (((CtxStr 𝕋) // Γ) // Γ')
-      SubStrSubTm : {Γ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
-        → Tm (⇑ ⌈ σ ⌉s t) (SubStrSubCtx T' Γ' σ t T'') T''
-      SubLiftSub : {Γ Φ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
-        → (φ : Subst (P M) Φ Γ) → (Φ' : Ty ((CtxStr 𝕋) // Φ)) → (φ' : Subst ⌈ φ ⌉s Φ' Γ')
-        → Tm (⇑ ⌈ Subst⇒ (μ M) (SubComp φ σ) ⌉s (Tm⇒ ⌈ (μ M) ∣ (SubComp φ σ) ⌉⇒ {Γ = Φ'} {T = T'} {! Γ' , φ' , t  !})) {!   !} {!   !} -- Tm (⇑ ⌈ Subst⇒ (μ M) (SubComp φ σ) ⌉s
+  -- record SubStr {𝕋 : TyStr} (M : Monad 𝕋) : Type₁ where
+  --   coinductive
+  --   field
+  --     SubStrCtx : {Γ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
+  --       →  Ty ((CtxStr 𝕋) // Γ)
+  --     SubStrTm : {Γ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T)  
+  --       → Tm (⇑ (P M) t) (SubStrCtx T' t) T'
+  --     SubLift : {Γ Δ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
+  --       → (σ : Subst (P M) Δ Γ) → (Δ' : Ty ((CtxStr 𝕋) // Δ)) 
+  --       → (t' : Tm (⇑ (P M) (Tm⇒ (μ M) (Γ , σ , t))) Δ' T')
+  --       → Subst ⌈ σ ⌉s Δ' (SubStrCtx T' t)
+  --     LiftEq : {Γ Δ : Ctx 𝕋} {T : Ty 𝕋} (T' : Ty (𝕋 // T)) (t : Tm (P M) Γ T) 
+  --       → (σ : Subst (P M) Δ Γ) → (Δ' : Ty ((CtxStr 𝕋) // Δ)) 
+  --       → (t' : Tm (⇑ (P M) (Tm⇒ (μ M) (Γ , σ , t))) Δ' T')
+  --       → t' ≡ Tm⇒ (⇑⇒ (μ M) (Γ , σ , t)) ((SubStrCtx T' t) , ((SubLift T' t σ Δ' t') , SubStrTm T' t))
+
+    
+
+  -- -- the substitution cant be empty!
+  -- record SubStrSub {𝕋 : TyStr} (M : Monad 𝕋) : Type₁ where
+  --   field
+  --     S : SubStr M -- needed since we lif the morphism in SubLiftSub and therefore Sublift is not the same operation
+  --     SubStrSubCtx : {Γ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
+  --       → Ty (((CtxStr 𝕋) // Γ) // Γ')
+  --     SubStrSubTm : {Γ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
+  --       → Tm (⇑ ⌈ σ ⌉s t) (SubStrSubCtx T' Γ' σ t T'') T''
+  --     SubLiftSub : {Γ Φ Δ : Ctx 𝕋} (T' : Ty ⌈ Δ ⌉) (Γ' : Ctx ⌈ Γ ⌉) (σ : Subst (P M) Γ Δ) (t : Tm ⌈ σ ⌉s Γ' T') (T'' : Ty (⌈ Δ ⌉ // T'))
+  --       → (φ : Subst (P M) Φ Γ) → (Φ' : Ty ((CtxStr 𝕋) // Φ)) → (φ' : Subst ⌈ φ ⌉s Φ' Γ')
+  --       → Tm (⇑ ⌈ Subst⇒ (μ M) (SubComp φ σ) ⌉s (Tm⇒ ⌈ (μ M) ∣ (SubComp φ σ) ⌉⇒ {Γ = Φ'} {T = T'} {! Γ' , φ' , t  !})) {!   !} {!   !} -- Tm (⇑ ⌈ Subst⇒ (μ M) (SubComp φ σ) ⌉s
 
   -- Tm⇒ ⌈ (μ M) ∣ (SubComp φ σ) ⌉⇒
   -- record WkStrM {𝕋 : TyStr} (M : Monad 𝕋) : Type₁ where
@@ -84,9 +108,10 @@ module Monad where
     coinductive
     field
       M : Monad 𝕋
-      S : SubStr M
-      SubUnique : (S' : SubStr (M)) → S' ≡ S
-
+      S : SubStr (P M) (P M) (P M) (μ M)
+      Uniq : {N : Monad 𝕋} (S' : SubStr (P M) (P M) (P M) (μ M))
+        → S ≡ S'
+ 
       
         
   
