@@ -456,6 +456,6 @@ module BSystems where
   transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
   transportSplit {A = A} {B = B} {C = C} {D = D} refl f g = {!    !}
 
-  
+   
    
       

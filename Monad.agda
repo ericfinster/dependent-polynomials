@@ -47,9 +47,18 @@ module Monad where
 
 
 
-    -- this probably needs to take substitutions instead of terms
-    -- we could also realize this by coinductively generating new subst structures,
-    -- we would then need to abstract μ
+
+  -- this solves my problem in ToBSys but it never uses μ and probably uses a wrong TyTmStr
+  record SubStr2 {𝕊 𝕋 𝕍 : TyStr} (P : DepPoly 𝕊 𝕋) (Q : DepPoly 𝕋 𝕍) (R : DepPoly 𝕊 𝕍) (μ : P ⊚ Q ⇒ R) : Type₁ where
+    coinductive
+    field
+      SubStr2Ctx : {Γ : Ctx 𝕋} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (Γ' : Ctx ⌈ Γ ⌉) (t : Tm Q Γ T)
+        → Ctx 𝕋
+      SubStr2Ty : {Γ : Ctx 𝕋} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (Γ' : Ctx ⌈ Γ ⌉) (t : Tm Q Γ T)
+        → Ty 𝕍
+      SubStr2Tm : {Γ : Ctx 𝕋} {T : Ty 𝕍} (T' : Ty (𝕍 // T)) (Γ' : Ctx ⌈ Γ ⌉) (t : Tm Q Γ T) (t' : Tm Q Γ T)
+        (t'' : Tm (⇑ Q t') Γ' T') → Tm Q (SubStr2Ctx T' Γ' t) (SubStr2Ty T' Γ' t)
+
 
   record SubStr {𝕊 𝕋 𝕍 : TyStr} (P : DepPoly 𝕊 𝕋) (Q : DepPoly 𝕋 𝕍) (R : DepPoly 𝕊 𝕍) (μ : P ⊚ Q ⇒ R) : Type₁ where
     coinductive

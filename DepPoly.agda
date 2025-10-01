@@ -25,6 +25,7 @@ module DepPoly where
   record WkPoly {𝕊 𝕋 : TyStr} (P : DepPoly 𝕊 𝕋) : Type₁ where
     coinductive
     field
+      wkStr : WkStr 𝕋
       wk : (Γ : Ctx 𝕊) (T : Ty 𝕋) (T' : Ty ⌈ Γ ⌉) → Tm P Γ T → Tm P (WkCtx Γ T') T 
       wk-⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T) → WkPoly (⇑ P t)
 
@@ -162,13 +163,6 @@ module DepPoly where
   SubCompIntro {𝕋} {P} {Γ} {Φ} {Δ} T' Γ' (● .Γ) t T'' φ Φ' φ' = {! Γ' , φ' , t  !}
   SubCompIntro {𝕋} {P} {Γ} {Φ} {Δ} T' Γ' (cns Γ₁ T t₁ Γ'' Δ' σ) t T'' φ Φ' φ' = {! SubCompIntro T' Γ'   !}
  
-
-{-
-  _*_ : {𝕋 : TyStr} {M : DepPoly 𝕋 𝕋} → {Γ Φ Δ : Ctx 𝕋} → (ɣ : Subst M Γ Φ) 
-      → (φ : Subst M Φ Δ) → (Subst M Γ Δ)
-  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (● .Φ) = ● Γ
-  _*_ {𝕋} {M} {Γ} {Φ} {Δ} ɣ (cns Γ₁ T t Γ' Δ' φ) = cns Γ T (⌈ ɣ ⌉s .Tm Γ₁ t) Γ' Δ' (ɣ * φ)
--}
 
   data IdTm (𝕋 : TyStr) : Ctx 𝕋 → Ty 𝕋 → Type where
     idT : (T : Ty 𝕋) → IdTm 𝕋 (T ► ϵ) T 
