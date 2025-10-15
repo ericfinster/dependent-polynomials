@@ -38,6 +38,11 @@ module BSystems where
   ΣStructure A .Tm (fst₁ , snd₁) = Tm (A fst₁) snd₁
   ΣStructure A .Slc (fst₁ , snd₁) = Slc (A fst₁) snd₁
 
+  ΠStructure : {I : Type} (A : I → TyTmStr) → TyTmStr
+  ΠStructure {I} A .Typ = (i : I) → Typ (A i)
+  ΠStructure {I} A .Tm f = (i : I) → Tm (A i) (f i)
+  ΠStructure {I} A .Slc f = ΠStructure (λ i → Slc (A i) (f i))
+
   -- emptyStr : TyTmStr
   -- emptyStr .Typ = ⊥
   -- emptyStr .Tm = rec
@@ -456,6 +461,6 @@ module BSystems where
   transportSplit : {A B C D : TyTmStr} (p : C ≡ D) (f : A ↝ B) (g : B ↝ C) → transport (λ i → (A ↝ (p i))) (g ○ f) ≡ ((transport (λ i → B ↝ (p i)) g) ○ f)
   transportSplit {A = A} {B = B} {C = C} {D = D} refl f g = {!    !}
 
-   
+
    
       

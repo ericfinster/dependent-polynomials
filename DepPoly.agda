@@ -25,8 +25,8 @@ module DepPoly where
   record WkPoly {𝕊 𝕋 : TyStr} (P : DepPoly 𝕊 𝕋) : Type₁ where
     coinductive
     field
-      wkStr : WkStr 𝕋
-      wk : (Γ : Ctx 𝕊) (T : Ty 𝕋) (T' : Ty ⌈ Γ ⌉) → Tm P Γ T → Tm P (WkCtx Γ T') T 
+      wkStr : WkStr 𝕊
+      wk : (Γ : Ctx 𝕊) (T : Ty 𝕋) (T' : Ty 𝕊) → Tm P Γ T → Tm P (WkCtx wkStr Γ T') T  
       wk-⇑ : {Γ : Ctx 𝕊} {T : Ty 𝕋} (t : Tm P Γ T) → WkPoly (⇑ P t)
 
   

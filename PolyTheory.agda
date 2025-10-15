@@ -12,7 +12,7 @@ module PolyTheory where
         coinductive
         field
             M : Monad 𝕋
-            WkS : WkPoly (Monad.P M)
+            WkS : WknStr (Monad.P M) (Monad.P M) (Monad.P M) (Monad.μ M)
             SubS : SubStr (Monad.P M) (Monad.P M) (Monad.P M) (Monad.μ M)
 
     record PolyTheory2 (𝕋 : TyStr) : Type₁ where

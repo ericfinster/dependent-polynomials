@@ -32,6 +32,10 @@ module TyStr where
 
   open Hom public
 
+  HomCtx : {𝕊 𝕋 : TyStr} (f : Hom 𝕊 𝕋) (Γ : Ctx 𝕊) → Ctx 𝕋
+  HomCtx f ϵ = ϵ
+  HomCtx f (T ► Γ) = (ty f T) ► (HomCtx (//Hom f T) Γ)
+
   ImgStr : {𝕊 𝕋 : TyStr} (f : Hom 𝕊 𝕋) → TyStr
   ImgStr {𝕊} {𝕋} f .Ty = Σ[ T ∈ Ty 𝕊 ] Σ[ T' ∈ Ty 𝕋 ] (ty f T ≡ T')
   ImgStr f // (fst₁ , fst₂ , snd₁) = ImgStr (//Hom f fst₁)
@@ -41,16 +45,17 @@ module TyStr where
     coinductive
     field
       wk : (T : Ty 𝕋) → Hom 𝕋 (_//_ 𝕋 T)
-      liftStr : (T : Ty 𝕋) → WkStr (_//_ 𝕋 T) 
+      liftStr : (T : Ty 𝕋) → WkStr (_//_ 𝕋 T)
+
+  open WkStr public 
 
 
   ⌈_⌉ : {𝕋 : TyStr} → Ctx 𝕋 → TyStr
   ⌈_⌉ {𝕋} ϵ = 𝕋
   ⌈_⌉ (T ► Γ) = ⌈ Γ ⌉  
 
-  WkCtx : {𝕋 : TyStr} (Γ : Ctx 𝕋) (T : Ty ⌈ Γ ⌉) → Ctx 𝕋
-  WkCtx ϵ T = T ► ϵ
-  WkCtx (T₁ ► Γ) T = T₁ ► (WkCtx Γ T)
+  WkCtx : {𝕋 : TyStr} (Wk : WkStr 𝕋) (Γ : Ctx 𝕋) (T : Ty 𝕋) → Ctx 𝕋
+  WkCtx Wk Γ T = T ► HomCtx (wk Wk T) Γ
 
   CtxStep : {𝕋 : TyStr} (Γ : Ctx 𝕋) → TyStr
   CtxStep {𝕋} ϵ = 𝕋
